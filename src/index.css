@@ -100,14 +100,39 @@ body {
   animation: jumpscare-shake 0.05s infinite;
 }
 
-/* Strobe flash for jumpscare */
-@keyframes strobe-flash {
-  0%, 100% { filter: brightness(1) contrast(1.4); }
-  50% { filter: brightness(2.2) contrast(2) invert(0.15); }
+/* Jumpscare sudden lunging jump-up animation */
+@keyframes jumpscare-lunge-up {
+  0% {
+    transform: translateY(85%) scale(0.55);
+    opacity: 0.2;
+  }
+  12% {
+    transform: translateY(20%) scale(1.2) rotate(2deg);
+    opacity: 1;
+  }
+  28% {
+    transform: translateY(-6%) scale(1.65) rotate(-4deg);
+  }
+  42% {
+    transform: translateY(5%) scale(1.85) rotate(3deg);
+  }
+  60% {
+    transform: translateY(-5%) scale(2.0) rotate(-3deg);
+  }
+  78% {
+    transform: translateY(3%) scale(1.9) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0%) scale(2.15) rotate(-1deg);
+  }
 }
 
-.strobe-effect {
-  animation: strobe-flash 0.08s infinite;
+.jumpscare-anim {
+  animation: jumpscare-lunge-up 0.32s cubic-bezier(0.12, 0.95, 0.25, 1) forwards, jumpscare-shake 0.05s 0.32s infinite;
+}
+
+.face-clear {
+  filter: brightness(1.3) contrast(1.25) drop-shadow(0 0 40px rgba(255, 0, 0, 0.85));
 }
 
 /* Fan rotation */

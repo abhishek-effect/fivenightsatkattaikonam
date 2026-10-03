@@ -39,16 +39,20 @@ export default function JumpscareOverlay({ jumpscareWho, onJumpscareEnd }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
-      {/* Violent Jumpscare Animation */}
+      {/* Violent Jumpscare Sudden Lunging Jump-Up Animation */}
       {!showStaticCut ? (
-        <div className="relative w-full h-full flex items-center justify-center shake-intense strobe-effect">
-          <img
-            src={imageSrc}
-            alt={title}
-            className="w-full h-full object-cover filter contrast-150 saturate-150 scale-125"
-          />
-          {/* Blood-red vignette overlay */}
-          <div className="absolute inset-0 bg-red-900/40 mix-blend-color-burn pointer-events-none" />
+        <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
+          {/* Sudden Jump-Up Character Container */}
+          <div className="relative w-full h-full flex items-center justify-center jumpscare-anim pointer-events-none">
+            <img
+              src={imageSrc}
+              alt={title}
+              className="max-h-[90vh] md:max-h-[95vh] w-auto max-w-[95vw] object-contain face-clear rounded-2xl"
+            />
+          </div>
+
+          {/* Sudden red pulse flare on impact */}
+          <div className="absolute inset-0 bg-red-600/20 mix-blend-screen pointer-events-none animate-ping" />
           <div className="crt-overlay" />
           <div className="crt-vignette" />
         </div>

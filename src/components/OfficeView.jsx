@@ -85,11 +85,11 @@ export default function OfficeView({
 
         {/* THREAT EXPOSED BY LIGHT: Aadesh at the blind spot */}
         {showAadeshAtDoor && (
-          <div className="absolute top-[28%] left-[58%] w-60 md:w-80 pointer-events-none animate-pulse z-20">
+          <div className="absolute top-[26%] left-[58%] w-60 md:w-80 pointer-events-none animate-pulse z-20">
             <img 
-              src="./assets/images/aadesh-jumpscare.jpg" 
+              src="./assets/images/aadesh-jumpscare-cutout.png" 
               alt="Aadesh at Doorway" 
-              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_25px_rgba(255,0,0,0.8)] rounded-lg"
+              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_30px_rgba(255,0,0,0.9)]"
             />
           </div>
         )}
