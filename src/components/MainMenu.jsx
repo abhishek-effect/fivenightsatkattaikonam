@@ -166,9 +166,9 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
               <div className="space-y-2 border-l-2 border-red-500 pl-3">
                 <h4 className="font-bold text-white uppercase text-xs tracking-wider">The Three Threats:</h4>
-                <p><span className="text-red-400 font-bold">1. AB:</span> Roams from the Physics Lab (CAM 1) through Corridor A into the Stairs. If he reaches your door while it's open, you're finished!</p>
-                <p><span className="text-cyan-400 font-bold">2. DIPU:</span> Hides in the Supply Hallway (CAM 3). Check CAM 3 periodically to keep him suppressed. If he goes missing from CAM 3, he is sprinting straight for your office! Shut the door immediately!</p>
-                <p><span className="text-yellow-400 font-bold">3. AADESH:</span> Creeps along the Stairs and into the doorway blind spot. Check your hallway light to spot him before he slips inside!</p>
+                <p><span className="text-red-400 font-bold">1. AB:</span> Roams from CAM 1 into the doorway. Reaction window starts at 5s on Night 1, decreasing each night down to 1s on Night 5!</p>
+                <p><span className="text-cyan-400 font-bold">2. DIPU:</span> Hides in CAM 3. If missing, he sprints straight for your office! Shut the door immediately (he strikes instantly with no waiting)!</p>
+                <p><span className="text-yellow-400 font-bold">3. AADESH:</span> Creeps into the doorway blind spot. Turn on the light to spot him (5s window on Night 1, down to 1s on Night 5)!</p>
               </div>
 
               <div className="space-y-1.5 border-l-2 border-green-500 pl-3">

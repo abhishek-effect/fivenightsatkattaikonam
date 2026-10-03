@@ -9,11 +9,11 @@ export const CAMERAS = [
 ];
 
 export const NIGHT_PRESETS = {
-  1: { hourSeconds: 50, abLevel: 3, dipuLevel: 1, aadeshLevel: 2, label: 'Night 1 - The Orientation' },
-  2: { hourSeconds: 50, abLevel: 6, dipuLevel: 4, aadeshLevel: 5, label: 'Night 2 - Disturbances' },
-  3: { hourSeconds: 55, abLevel: 10, dipuLevel: 8, aadeshLevel: 9, label: 'Night 3 - Escalation' },
-  4: { hourSeconds: 60, abLevel: 14, dipuLevel: 12, aadeshLevel: 13, label: 'Night 4 - Lockdown' },
-  5: { hourSeconds: 60, abLevel: 18, dipuLevel: 17, aadeshLevel: 18, label: 'Night 5 - Final Shift' },
+  1: { hourSeconds: 50, abLevel: 3, dipuLevel: 1, aadeshLevel: 2, doorWaitTime: 5.0, label: 'Night 1 - The Orientation' },
+  2: { hourSeconds: 50, abLevel: 6, dipuLevel: 4, aadeshLevel: 5, doorWaitTime: 4.0, label: 'Night 2 - Disturbances' },
+  3: { hourSeconds: 55, abLevel: 10, dipuLevel: 8, aadeshLevel: 9, doorWaitTime: 3.0, label: 'Night 3 - Escalation' },
+  4: { hourSeconds: 60, abLevel: 14, dipuLevel: 12, aadeshLevel: 13, doorWaitTime: 2.0, label: 'Night 4 - Lockdown' },
+  5: { hourSeconds: 60, abLevel: 18, dipuLevel: 17, aadeshLevel: 18, doorWaitTime: 1.0, label: 'Night 5 - Final Shift' },
 };
 
 // Standalone helper function for usage bars calculation
@@ -34,6 +34,8 @@ export class GameState {
     this.abLevel = config.abLevel ?? 4;
     this.dipuLevel = config.dipuLevel ?? 3;
     this.aadeshLevel = config.aadeshLevel ?? 4;
+    // Reaction time window at door: 5s on Night 1, 4s on Night 2, down to 1s on Night 5
+    this.doorWaitTime = config.doorWaitTime ?? Math.max(1.0, 6.0 - this.night);
 
     this.time = 0; // 0 = 12 AM, 1 = 1 AM, ... 6 = 6 AM
     this.timeProgress = 0; // 0 to 1 within current hour
@@ -158,8 +160,8 @@ export class GameState {
         this.ab.atDoorTimer = 0;
       } else {
         this.ab.atDoorTimer += dt;
-        // Stands at the door for exactly 5.0 seconds before jumpscaring
-        if (this.ab.atDoorTimer >= 5.0) {
+        // Stands at the door before jumpscaring: 5s on Night 1, 4s on Night 2, down to 1s on Night 5
+        if (this.ab.atDoorTimer >= this.doorWaitTime) {
           this.triggerJumpscare('ab', onEvent);
         }
       }
@@ -254,8 +256,8 @@ export class GameState {
         this.aadesh.atBlindSpotTimer = 0;
       } else {
         this.aadesh.atBlindSpotTimer += dt;
-        // Stands at the door for exactly 5.0 seconds before jumpscaring
-        if (this.aadesh.atBlindSpotTimer >= 5.0) {
+        // Stands at the door before jumpscaring: 5s on Night 1, 4s on Night 2, down to 1s on Night 5
+        if (this.aadesh.atBlindSpotTimer >= this.doorWaitTime) {
           this.triggerJumpscare('aadesh', onEvent);
         }
       }
