@@ -66,11 +66,11 @@ export default function StudioIntro({ onFinish }) {
 
         {/* Studio Title */}
         <div className="space-y-1">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 drop-shadow-[0_2px_15px_rgba(245,158,11,0.6)] font-mono">
-            ABHI BROS
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 drop-shadow-[0_2px_15px_rgba(245,158,11,0.6)] font-mono">
+            IIT CHANTHAVILA
           </h1>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-[0.35em] text-amber-500/90 uppercase font-mono">
-            ENTERTAINMENT
+          <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-[0.25em] text-amber-500/90 uppercase font-mono">
+            COMPUTER ENTERTAINMENT
           </h2>
         </div>
 

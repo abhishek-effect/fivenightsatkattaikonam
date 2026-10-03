@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Play, ShieldAlert, Settings, HelpCircle } from 'lucide-react';
+import { Volume2, VolumeX, Play, ShieldAlert, Settings, HelpCircle, Users } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 
 export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showLore, setShowLore] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
@@ -77,7 +78,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   return (
     <div 
       onClick={handleInteraction}
-      className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between p-8 select-none"
+      className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between p-6 md:p-8 select-none"
     >
       {/* Background menu image with shaky glitch motion */}
       <div 
@@ -113,16 +114,18 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
       )}
 
       {/* Header controls */}
-      <div className="relative z-10 flex justify-between items-center">
+      <div className="relative z-10 flex justify-between items-center w-full">
         <div className="flex items-center space-x-2 bg-black/60 backdrop-blur border border-red-500/40 px-3 py-1.5 rounded">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-600 animate-ping mr-2" />
-          <span className="text-red-500 font-bold tracking-widest text-sm uppercase">CCTV SURVEILLANCE SYSTEM v1.987</span>
+          <span className="text-red-500 font-bold tracking-widest text-xs md:text-sm uppercase font-mono">
+            CCTV SURVEILLANCE SYSTEM v0.26.10
+          </span>
         </div>
 
         <div className="flex items-center space-x-3">
           <button
             onClick={handleToggleMute}
-            className="p-2.5 rounded bg-black/70 hover:bg-red-950/80 border border-gray-700 hover:border-red-500 transition text-gray-300 hover:text-white flex items-center gap-2 text-sm cursor-pointer"
+            className="p-2.5 rounded bg-black/70 hover:bg-red-950/80 border border-gray-700 hover:border-red-500 transition text-gray-300 hover:text-white flex items-center gap-2 text-xs md:text-sm cursor-pointer"
             title="Toggle Mute"
           >
             {isMuted ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-green-400" />}
@@ -131,7 +134,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
           <button
             onClick={(e) => { e.stopPropagation(); setShowLore(true); }}
-            className="p-2.5 rounded bg-black/70 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 transition text-gray-300 flex items-center gap-1.5 text-sm cursor-pointer"
+            className="p-2.5 rounded bg-black/70 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 transition text-gray-300 flex items-center gap-1.5 text-xs md:text-sm cursor-pointer"
           >
             <HelpCircle size={18} />
             <span>HOW TO PLAY</span>
@@ -139,41 +142,53 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         </div>
       </div>
 
-      {/* Center Left Title & Main Navigation */}
-      <div className="relative z-10 max-w-md my-auto space-y-6 bg-black/65 p-6 rounded-lg border border-neutral-800 backdrop-blur-sm shadow-2xl">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-wider text-red-600 glitch-text drop-shadow-[0_2px_10px_rgba(255,0,0,0.8)]">
-            FIVE NIGHTS
-          </h1>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-widest text-gray-200">
-            AT KATTAIKONAM
-          </h2>
-          <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">
-            Survive the Night Shift from 12 AM to 6 AM
+      {/* TOP MIDDLE TITLE: Five Nights at Kattaikonam */}
+      <div className="relative z-10 mx-auto text-center space-y-1.5 pt-2 pointer-events-none max-w-2xl">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-widest text-red-600 glitch-text drop-shadow-[0_4px_25px_rgba(255,0,0,0.9)]">
+          FIVE NIGHTS
+        </h1>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-[0.3em] text-gray-100 uppercase drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+          AT KATTAIKONAM
+        </h2>
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <span className="w-8 md:w-16 h-[1px] bg-red-600/60" />
+          <p className="text-[10px] md:text-xs text-red-400 font-mono tracking-[0.25em] uppercase">
+            SURVIVE THE NIGHT SHIFT • 12:00 AM TO 6:00 AM
           </p>
+          <span className="w-8 md:w-16 h-[1px] bg-red-600/60" />
+        </div>
+      </div>
+
+      {/* LEFT MIDDLE NAVIGATION: New Game etc. */}
+      <div className="relative z-10 w-full max-w-sm my-auto space-y-4 bg-black/75 p-5 md:p-6 rounded-xl border border-neutral-800 backdrop-blur-md shadow-[0_0_40px_rgba(0,0,0,0.9)]">
+        <div className="text-xs font-mono font-bold text-gray-400 tracking-widest border-b border-neutral-800 pb-1.5 flex justify-between items-center">
+          <span>MAIN MENU</span>
+          <span className="text-red-500 font-mono">v0.26.10</span>
         </div>
 
         {/* Menu Actions */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-2.5">
+          {/* CONTINUE BUTTON */}
           <button
             onClick={() => handleStartShift(currentNight)}
-            className="w-full py-3.5 px-6 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-lg rounded transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group cursor-pointer"
+            className="w-full py-3 px-5 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-sm md:text-base rounded transition-all duration-150 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group cursor-pointer"
           >
-            <Play size={20} className="text-red-400 group-hover:scale-125 transition-transform" />
+            <Play size={18} className="text-red-400 group-hover:scale-125 transition-transform" />
             <span>CONTINUE (NIGHT {currentNight})</span>
           </button>
 
+          {/* NEW GAME BUTTON */}
           <button
             onClick={() => handleStartShift(1)}
-            className="w-full py-2.5 px-6 bg-black/80 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 text-gray-200 font-semibold tracking-wider text-sm rounded transition cursor-pointer"
+            className="w-full py-2.5 px-5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-gray-300 text-gray-200 font-semibold tracking-wider text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            NEW GAME (NIGHT 1)
+            <span>NEW GAME (NIGHT 1)</span>
           </button>
 
-          {/* Night Selector Grid */}
-          <div className="pt-2">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Select Night:</div>
-            <div className="grid grid-cols-5 gap-2">
+          {/* NIGHT SELECTOR GRID */}
+          <div className="pt-1">
+            <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1.5 font-mono">SELECT NIGHT:</div>
+            <div className="grid grid-cols-5 gap-1.5">
               {[1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
@@ -181,24 +196,34 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
                     onSelectNight(n);
                     handleStartShift(n);
                   }}
-                  className={`py-2 text-xs font-bold rounded border transition cursor-pointer ${
+                  className={`py-1.5 text-xs font-bold rounded border transition cursor-pointer font-mono ${
                     n === currentNight
-                      ? 'bg-red-600/30 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
-                      : 'bg-black/50 border-neutral-700 hover:border-neutral-400 text-gray-400 hover:text-white'
+                      ? 'bg-red-600/35 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
+                      : 'bg-black/60 border-neutral-800 hover:border-neutral-500 text-gray-400 hover:text-white'
                   }`}
                 >
-                  NIGHT {n}
+                  {n}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* CUSTOM NIGHT BUTTON */}
           <button
             onClick={(e) => { e.stopPropagation(); setShowCustomNight(true); }}
-            className="w-full py-2 px-4 bg-neutral-900 hover:bg-neutral-800 border border-yellow-600/50 hover:border-yellow-500 text-yellow-400 font-mono text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2 px-4 bg-neutral-950 hover:bg-neutral-900 border border-yellow-600/50 hover:border-yellow-400 text-yellow-400 font-mono text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <Settings size={14} />
             <span>CUSTOM NIGHT (AI CONFIG)</span>
+          </button>
+
+          {/* CREDITS BUTTON */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowCredits(true); }}
+            className="w-full py-2 px-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-700 hover:border-cyan-400 text-cyan-400 font-mono text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Users size={14} />
+            <span>CREDITS</span>
           </button>
         </div>
       </div>
@@ -214,12 +239,76 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
           <span>•</span>
           <span>[ESC] Pause</span>
         </div>
-        <div className="text-gray-400 mt-2 md:mt-0">
-          Kattaikonam Campus Security Division • 1987-2026
+        <div className="text-gray-400 mt-2 md:mt-0 font-mono">
+          IIT Chanthavila Computer Entertainment • v0.26.10
         </div>
       </div>
 
-      {/* How to play modal */}
+      {/* CREDITS MODAL */}
+      {showCredits && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div className="bg-neutral-950 border-2 border-cyan-500/80 rounded-xl max-w-md w-full p-6 text-gray-200 space-y-5 shadow-[0_0_50px_rgba(6,182,212,0.35)]">
+            <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+              <h3 className="text-lg font-bold text-cyan-400 flex items-center gap-2 font-mono">
+                <Users size={18} />
+                PRODUCTION CREDITS
+              </h3>
+              <button 
+                onClick={() => setShowCredits(false)}
+                className="text-gray-400 hover:text-white font-mono text-base cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs font-mono space-y-4 max-h-[60vh] overflow-y-auto pr-2 leading-relaxed">
+              <div className="p-3 bg-neutral-900/80 border border-neutral-800 rounded text-center">
+                <p className="text-gray-300 font-semibold italic">
+                  Inspired by Five Nights at Freddy's by Scott Cawthon
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="border-l-2 border-red-500 pl-3">
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Lead Designer</span>
+                  <span className="text-red-400 font-bold text-sm">Pinky</span>
+                </div>
+
+                <div className="border-l-2 border-yellow-500 pl-3">
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Photos</span>
+                  <div className="text-yellow-300 font-semibold space-y-0.5 mt-0.5">
+                    <p>Devkrishna</p>
+                    <p>Aadesh</p>
+                    <p>Abhishek</p>
+                  </div>
+                </div>
+
+                <div className="border-l-2 border-cyan-500 pl-3">
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Audio</span>
+                  <span className="text-cyan-300 font-semibold">Audio from Pixabay</span>
+                </div>
+
+                <div className="border-l-2 border-purple-500 pl-3">
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Development</span>
+                  <span className="text-purple-300 font-bold">Coded by Gemini</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowCredits(false)}
+              className="w-full py-2.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-200 font-mono font-bold text-xs rounded tracking-wider uppercase cursor-pointer"
+            >
+              CLOSE CREDITS
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* HOW TO PLAY MODAL */}
       {showLore && (
         <div 
           onClick={(e) => e.stopPropagation()}
@@ -268,7 +357,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         </div>
       )}
 
-      {/* Custom Night AI Level Modal */}
+      {/* CUSTOM NIGHT AI LEVEL MODAL */}
       {showCustomNight && (
         <div 
           onClick={(e) => e.stopPropagation()}
