@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Play, ShieldAlert, Settings, HelpCircle, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Volume2, VolumeX, Play, Settings, HelpCircle, Users } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 
 export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
-  const [showLore, setShowLore] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
+  const [showHowToPlayScare, setShowHowToPlayScare] = useState(false);
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
   const [glitchBurst, setGlitchBurst] = useState(false);
+  const scareTimeoutRef = useRef(null);
 
   // Play Main Menu BGM on mount and cleanup on unmount
   useEffect(() => {
     soundManager.playMenuBgm();
     return () => {
       soundManager.stopMenuBgm();
+      if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
     };
   }, []);
 
@@ -70,9 +72,30 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
     onStartGame(night);
   };
 
+  // Troll Jumpscare trigger when clicking "HOW TO PLAY"
+  const triggerHowToPlayScare = () => {
+    soundManager.stopMenuBgm();
+    soundManager.playJumpscare();
+    setShowHowToPlayScare(true);
+
+    if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
+    scareTimeoutRef.current = setTimeout(() => {
+      setShowHowToPlayScare(false);
+      soundManager.playMenuBgm();
+    }, 2200);
+  };
+
+  const dismissHowToPlayScare = () => {
+    if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
+    setShowHowToPlayScare(false);
+    soundManager.playMenuBgm();
+  };
+
   // Ensure music plays if browser blocked initial autoplay until click
   const handleInteraction = () => {
-    soundManager.playMenuBgm();
+    if (!showHowToPlayScare) {
+      soundManager.playMenuBgm();
+    }
   };
 
   return (
@@ -113,7 +136,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         </>
       )}
 
-      {/* Header controls */}
+      {/* Header controls (How to Play removed from top right as requested) */}
       <div className="relative z-10 flex justify-between items-center w-full">
         <div className="flex items-center space-x-2 bg-black/60 backdrop-blur border border-red-500/40 px-3 py-1.5 rounded">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-600 animate-ping mr-2" />
@@ -130,14 +153,6 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
           >
             {isMuted ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-green-400" />}
             <span>{isMuted ? 'MUTED' : 'BGM ON'}</span>
-          </button>
-
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowLore(true); }}
-            className="p-2.5 rounded bg-black/70 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 transition text-gray-300 flex items-center gap-1.5 text-xs md:text-sm cursor-pointer"
-          >
-            <HelpCircle size={18} />
-            <span>HOW TO PLAY</span>
           </button>
         </div>
       </div>
@@ -159,7 +174,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         </div>
       </div>
 
-      {/* LEFT MIDDLE NAVIGATION: New Game etc. */}
+      {/* LEFT MIDDLE NAVIGATION: New Game, How to Play, Credits, etc. */}
       <div className="relative z-10 w-full max-w-sm my-auto space-y-4 bg-black/75 p-5 md:p-6 rounded-xl border border-neutral-800 backdrop-blur-md shadow-[0_0_40px_rgba(0,0,0,0.9)]">
         <div className="text-xs font-mono font-bold text-gray-400 tracking-widest border-b border-neutral-800 pb-1.5 flex justify-between items-center">
           <span>MAIN MENU</span>
@@ -217,6 +232,15 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
             <span>CUSTOM NIGHT (AI CONFIG)</span>
           </button>
 
+          {/* HOW TO PLAY BUTTON (Placed right above credits as requested) */}
+          <button
+            onClick={(e) => { e.stopPropagation(); triggerHowToPlayScare(); }}
+            className="w-full py-2 px-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-700 hover:border-red-500 text-gray-300 hover:text-red-400 font-mono text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer group"
+          >
+            <HelpCircle size={14} className="text-gray-400 group-hover:text-red-400 group-hover:scale-110 transition" />
+            <span>HOW TO PLAY</span>
+          </button>
+
           {/* CREDITS BUTTON */}
           <button
             onClick={(e) => { e.stopPropagation(); setShowCredits(true); }}
@@ -243,6 +267,31 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
           IIT Chanthavila Computer Entertainment • v0.26.10
         </div>
       </div>
+
+      {/* HOW TO PLAY JUMPSCARE POPUP (Shows How-to-play.jpg with screams and then disappears) */}
+      {showHowToPlayScare && (
+        <div 
+          onClick={(e) => { e.stopPropagation(); dismissHowToPlayScare(); }}
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden cursor-pointer select-none"
+        >
+          {/* Intense red flash & vignette */}
+          <div className="absolute inset-0 bg-red-600/35 mix-blend-color-dodge pointer-events-none animate-pulse" />
+
+          {/* Jumpscare Image: How-to-play.jpg */}
+          <div className="relative w-full h-full flex items-center justify-center shake-intense">
+            <img 
+              src="./assets/images/how-to-play.jpg" 
+              alt="How to Play" 
+              className="max-h-[95vh] max-w-[95vw] object-contain filter contrast-125 brightness-115 drop-shadow-[0_0_60px_rgba(255,0,0,0.95)] jumpscare-anim"
+            />
+          </div>
+
+          {/* Retro CRT scanlines and noise */}
+          <div className="crt-overlay" />
+          <div className="crt-vignette" />
+          <div className="absolute inset-0 static-fuzz opacity-40 pointer-events-none" />
+        </div>
+      )}
 
       {/* CREDITS MODAL */}
       {showCredits && (
@@ -303,55 +352,6 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
               className="w-full py-2.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-200 font-mono font-bold text-xs rounded tracking-wider uppercase cursor-pointer"
             >
               CLOSE CREDITS
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* HOW TO PLAY MODAL */}
-      {showLore && (
-        <div 
-          onClick={(e) => e.stopPropagation()}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
-        >
-          <div className="bg-neutral-900 border-2 border-red-600 rounded-lg max-w-lg w-full p-6 text-gray-200 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-              <h3 className="text-xl font-bold text-red-500 flex items-center gap-2">
-                <ShieldAlert size={20} />
-                SECURITY BRIEFING & SURVIVAL GUIDE
-              </h3>
-              <button 
-                onClick={() => setShowLore(false)}
-                className="text-gray-400 hover:text-white text-lg font-mono font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="text-sm space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-              <p className="text-yellow-300 font-semibold">
-                Welcome to your night shift at Kattaikonam! Your job is to survive from 12:00 AM to 6:00 AM.
-              </p>
-
-              <div className="space-y-2 border-l-2 border-red-500 pl-3">
-                <h4 className="font-bold text-white uppercase text-xs tracking-wider">The Three Threats:</h4>
-                <p><span className="text-red-400 font-bold">1. AB:</span> Roams from CAM 1 into the doorway. Reaction window starts at 5s on Night 1, decreasing each night down to 1s on Night 5!</p>
-                <p><span className="text-cyan-400 font-bold">2. DIPU:</span> Hides in CAM 3. If missing, he sprints straight for your office! Shut the door immediately (he strikes instantly with no waiting)!</p>
-                <p><span className="text-yellow-400 font-bold">3. AADESH:</span> Creeps into the doorway blind spot. Turn on the light to spot him (5s window on Night 1, down to 1s on Night 5)!</p>
-              </div>
-
-              <div className="space-y-1.5 border-l-2 border-green-500 pl-3">
-                <h4 className="font-bold text-white uppercase text-xs tracking-wider">Power Management:</h4>
-                <p>You have 100% power for the entire night. Leaving the door closed, light turned on, or camera open drains power exponentially faster.</p>
-                <p className="text-red-400 text-xs">If power hits 0%, total blackout occurs and AB will pay you a personal visit.</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowLore(false)}
-              className="w-full py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded tracking-wider uppercase text-sm cursor-pointer"
-            >
-              UNDERSTOOD, COMMENCE SHIFT
             </button>
           </div>
         </div>
