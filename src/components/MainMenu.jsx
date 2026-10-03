@@ -28,8 +28,8 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
     <div className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between p-8 select-none">
       {/* Background menu image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center opacity-80 filter contrast-125"
-        style={{ backgroundImage: `url('./assets/images/menu-bg.png')` }}
+        className="absolute inset-0 bg-cover bg-center opacity-90 filter contrast-110"
+        style={{ backgroundImage: `url('./assets/images/main-menu.jpg')` }}
       />
 
       {/* CRT Scanline & static overlay */}

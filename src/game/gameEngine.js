@@ -166,7 +166,7 @@ export class GameState {
 
       this.dipu.stallTimer += dt;
       // If unwatched for long enough, advance stage
-      const advanceThreshold = Math.max(8, 26 - this.dipuLevel);
+      const advanceThreshold = Math.max(6, 18 - this.dipuLevel);
       if (this.dipu.stallTimer >= advanceThreshold) {
         this.dipu.stallTimer = 0;
         this.dipu.stage += 1;
@@ -215,11 +215,14 @@ export class GameState {
     }
 
     this.aadeshMoveTimer = (this.aadeshMoveTimer || 0) + dt;
-    if (this.aadeshMoveTimer >= 5) {
+    if (this.aadeshMoveTimer >= 3.8) {
       this.aadeshMoveTimer = 0;
       const roll = Math.floor(Math.random() * 20) + 1;
       if (roll <= this.aadeshLevel) {
         if (this.aadesh.location === 'CAM_4') {
+          this.aadesh.location = Math.random() < 0.6 ? 'CAM_2' : 'CAM_1';
+          onEvent({ type: 'MOVEMENT', animatronic: 'aadesh', to: this.aadesh.location });
+        } else if (this.aadesh.location === 'CAM_1') {
           this.aadesh.location = 'CAM_2';
           onEvent({ type: 'MOVEMENT', animatronic: 'aadesh', to: 'CAM_2' });
         } else if (this.aadesh.location === 'CAM_2') {
