@@ -47,6 +47,8 @@ export default function JumpscareOverlay({ jumpscareWho, onJumpscareEnd }) {
             <img
               src={imageSrc}
               alt={title}
+              loading="eager"
+              decoding="sync"
               className="max-h-[90vh] md:max-h-[95vh] w-auto max-w-[95vw] object-contain face-clear rounded-2xl"
             />
           </div>

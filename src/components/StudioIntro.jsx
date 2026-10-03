@@ -1,51 +1,84 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { soundManager } from '../audio/SoundManager';
-import { Film, Sparkles } from 'lucide-react';
+import { Film, CheckCircle2, Loader2 } from 'lucide-react';
+import { preloadAllAssets } from '../utils/assetLoader';
 
 export default function StudioIntro({ onFinish }) {
   const [progress, setProgress] = useState(0);
+  const [assetStatus, setAssetStatus] = useState('Initializing facility feeds...');
+  const [isLoaded, setIsLoaded] = useState(false);
   const [fadeStage, setFadeStage] = useState('in'); // 'in', 'show', 'out'
+  const skipRequestedRef = useRef(false);
+  const minTimeElapsedRef = useRef(false);
+  const isFinishedRef = useRef(false);
+
+  const finishIntro = () => {
+    if (isFinishedRef.current) return;
+    isFinishedRef.current = true;
+    setFadeStage('out');
+    setTimeout(() => {
+      onFinish();
+    }, 450);
+  };
 
   useEffect(() => {
     // Attempt audio jingle playback
     soundManager.playStudioJingle();
 
-    const duration = 5000; // 5 seconds
-    const intervalTime = 50;
-    const increment = (intervalTime / duration) * 100;
+    // Minimum display timer: ensure cinematic studio title is seen for at least 3 seconds
+    const minTimer = setTimeout(() => {
+      minTimeElapsedRef.current = true;
+      if (skipRequestedRef.current || isLoaded) {
+        finishIntro();
+      }
+    }, 3200);
 
-    const progressTimer = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + increment;
-        if (next >= 85) {
-          setFadeStage('out');
-        }
-        if (next >= 100) {
-          clearInterval(progressTimer);
-          return 100;
-        }
-        return next;
-      });
-    }, intervalTime);
+    // Active Preloading: Download and GPU-decode all images & audio to memory
+    preloadAllAssets(({ percent, currentItem }) => {
+      setProgress(percent);
+      if (currentItem) {
+        setAssetStatus(`Buffering: ${currentItem}`);
+      }
+    }).then(() => {
+      setIsLoaded(true);
+      setAssetStatus('All security feeds & audio buffers online');
+      setProgress(100);
 
-    const endTimer = setTimeout(() => {
-      onFinish();
-    }, duration);
+      // If user requested skip earlier or min display time already passed, finish now
+      if (skipRequestedRef.current || minTimeElapsedRef.current) {
+        setTimeout(finishIntro, 350);
+      }
+    }).catch((err) => {
+      console.warn('Preload warning:', err);
+      setIsLoaded(true);
+      setProgress(100);
+      if (minTimeElapsedRef.current) finishIntro();
+    });
+
+    // Fallback safety timer: after 6.5s, advance regardless
+    const maxTimer = setTimeout(() => {
+      finishIntro();
+    }, 6500);
 
     return () => {
-      clearInterval(progressTimer);
-      clearTimeout(endTimer);
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
     };
   }, [onFinish]);
 
   const handleSkip = () => {
-    onFinish();
+    skipRequestedRef.current = true;
+    if (isLoaded) {
+      finishIntro();
+    } else {
+      setAssetStatus(`Loading critical assets (${progress}%)... Please wait`);
+    }
   };
 
   return (
     <div 
       onClick={handleSkip}
-      className={`fixed inset-0 z-50 bg-black flex flex-col items-center justify-center select-none cursor-pointer transition-opacity duration-700 ${
+      className={`fixed inset-0 z-50 bg-black flex flex-col items-center justify-between p-6 select-none cursor-pointer transition-opacity duration-500 ${
         fadeStage === 'out' ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -57,8 +90,11 @@ export default function StudioIntro({ onFinish }) {
       <div className="crt-vignette" />
       <div className="absolute inset-0 static-fuzz opacity-20 pointer-events-none" />
 
+      {/* Top placeholder for flex spacing */}
+      <div className="w-full h-8" />
+
       {/* Center Studio Logo & Text */}
-      <div className="relative z-10 text-center space-y-4 px-6 max-w-xl animate-fade-in">
+      <div className="relative z-10 text-center space-y-4 px-6 max-w-xl animate-fade-in my-auto">
         {/* Emblem / Icon */}
         <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-red-600/20 border-2 border-amber-500/60 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-pulse">
           <Film size={32} className="text-amber-400" />
@@ -82,21 +118,38 @@ export default function StudioIntro({ onFinish }) {
         </div>
       </div>
 
-      {/* 5-second Linear Progress Indicator */}
-      <div className="absolute bottom-6 sm:bottom-10 inset-x-6 sm:inset-x-12 max-w-md mx-auto z-10 space-y-2">
-        <div className="w-full h-1 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
+      {/* Real Preload Progress Indicator & Status Bar */}
+      <div className="relative z-10 w-full max-w-md mx-auto space-y-2.5 pb-4">
+        {/* Progress Bar */}
+        <div className="w-full h-1.5 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800 shadow-[0_0_15px_rgba(0,0,0,0.8)]">
           <div 
-            className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-75 ease-linear"
+            className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-emerald-400 transition-all duration-150 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="flex justify-between items-center text-[10px] text-neutral-500 font-mono uppercase tracking-wider">
-          <span>INITIALIZING</span>
+
+        {/* Status Line */}
+        <div className="flex justify-between items-center text-[10px] sm:text-xs font-mono uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-neutral-400 truncate max-w-[240px] sm:max-w-xs">
+            {isLoaded ? (
+              <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+            ) : (
+              <Loader2 size={13} className="text-amber-400 animate-spin shrink-0" />
+            )}
+            <span className="text-amber-300 font-bold">{progress}%</span>
+            <span className="text-neutral-600">•</span>
+            <span className="truncate text-neutral-400">{assetStatus}</span>
+          </div>
+
           <button 
             onClick={(e) => { e.stopPropagation(); handleSkip(); }}
-            className="text-neutral-400 hover:text-amber-400 transition cursor-pointer"
+            className={`font-mono transition cursor-pointer font-bold px-2 py-0.5 rounded border text-[10px] active:scale-95 ${
+              isLoaded 
+                ? 'bg-amber-500/20 border-amber-500 text-amber-300 hover:bg-amber-500/30' 
+                : 'bg-black/50 border-neutral-700 text-neutral-400 hover:text-white'
+            }`}
           >
-            TAP TO SKIP ▶
+            {isLoaded ? 'ENTER ▶' : 'SKIP ▶'}
           </button>
         </div>
       </div>

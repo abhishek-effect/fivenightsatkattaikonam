@@ -283,6 +283,8 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
             <img 
               src="./assets/images/how-to-play.jpg" 
               alt="How to Play" 
+              loading="eager"
+              decoding="sync"
               className="max-h-[95vh] max-w-[95vw] object-contain filter contrast-125 brightness-115 drop-shadow-[0_0_60px_rgba(255,0,0,0.95)] jumpscare-anim"
             />
           </div>

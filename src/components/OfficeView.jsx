@@ -111,17 +111,34 @@ export default function OfficeView({
           transform: `translateX(${-panX}%)`
         }}
       >
-        {/* Main Office Image */}
+        {/* Main Office Image: Door Open Layer */}
         <img
-          src={isDoorLocked ? './assets/images/office-door-closed.jpg' : './assets/images/office-door-open.jpg'}
-          alt={isDoorLocked ? 'Door Closed' : 'Door Open'}
-          className={`w-full h-full object-cover transition-all duration-150 ${
+          src="./assets/images/office-door-open.jpg"
+          alt="Office Door Open"
+          loading="eager"
+          decoding="sync"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-100 ${
             gameState.isBlackout
               ? 'brightness-[0.04] contrast-200'
               : isLightActive
                 ? 'brightness-120 contrast-110 saturate-110'
                 : 'brightness-[0.58] contrast-125'
-          }`}
+          } ${isDoorLocked ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        />
+
+        {/* Main Office Image: Door Closed Layer */}
+        <img
+          src="./assets/images/office-door-closed.jpg"
+          alt="Office Door Closed"
+          loading="eager"
+          decoding="sync"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-100 ${
+            gameState.isBlackout
+              ? 'brightness-[0.04] contrast-200'
+              : isLightActive
+                ? 'brightness-120 contrast-110 saturate-110'
+                : 'brightness-[0.58] contrast-125'
+          } ${isDoorLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         />
 
         {/* DOORWAY DARKNESS SHROUD: When hallway Light is OFF, doorway is pitch black */}
@@ -170,6 +187,8 @@ export default function OfficeView({
             <img 
               src="./assets/images/aadesh-jumpscare-cutout.png" 
               alt="Aadesh at Doorway" 
+              loading="eager"
+              decoding="sync"
               className="w-full object-contain filter contrast-125 drop-shadow-[0_0_40px_rgba(255,255,255,0.9)]"
             />
           </div>
@@ -181,6 +200,8 @@ export default function OfficeView({
             <img 
               src="./assets/images/ab-cutout.png" 
               alt="AB at Open Doorway" 
+              loading="eager"
+              decoding="sync"
               className="w-full object-contain filter contrast-125 drop-shadow-[0_0_40px_rgba(255,255,255,0.9)]"
             />
           </div>

@@ -118,12 +118,19 @@ export default function CameraMonitor({
     <div className="fixed inset-0 z-45 bg-black flex flex-col justify-between overflow-hidden monitor-flip-up select-none">
       {/* CCTV Viewport Container */}
       <div className="relative flex-1 w-full h-full overflow-hidden bg-neutral-950 flex items-center justify-center">
-        {/* Actual Static Room Camera Image */}
-        <img
-          src={activeCam.image}
-          alt={activeCam.name}
-          className="w-full h-full object-cover filter brightness-[0.78] contrast-125"
-        />
+        {/* All Camera Room Feeds Pre-Mounted for 0ms Zero-Black-Screen Switching */}
+        {CAMERAS.map((cam) => (
+          <img
+            key={cam.id}
+            src={cam.image}
+            alt={cam.name}
+            loading="eager"
+            decoding="sync"
+            className={`absolute inset-0 w-full h-full object-cover filter brightness-[0.78] contrast-125 transition-opacity duration-75 ${
+              cam.id === gameState.currentCam ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
+            }`}
+          />
+        ))}
 
         {/* PERSISTENT THREAT RENDERING: Cutout Persons Rendered Seamlessly inside the Room */}
         {activeThreats.map((threat, idx) => (
@@ -136,6 +143,8 @@ export default function CameraMonitor({
               <img
                 src={threat.photo}
                 alt={threat.name}
+                loading="eager"
+                decoding="sync"
                 className="max-h-60 sm:max-h-72 md:max-h-96 w-auto object-contain filter contrast-125 saturate-125 drop-shadow-[0_0_25px_rgba(255,0,0,0.8)]"
               />
               {/* Surveillance Subject Tag */}
