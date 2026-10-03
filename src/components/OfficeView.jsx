@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Lock, Unlock, Lightbulb, ShieldAlert } from 'lucide-react';
+import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 
@@ -8,6 +8,7 @@ export default function OfficeView({
   onToggleDoor,
   onToggleLight,
   onToggleMonitor,
+  onPause,
   isDoorBanging,
 }) {
   const [panX, setPanX] = useState(0); // -10 to +10% horizontal panning
@@ -253,6 +254,21 @@ export default function OfficeView({
           NIGHT {gameState.night}
         </div>
       </div>
+
+      {/* Top Center: Pause Button */}
+      {onPause && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+          <button
+            onClick={onPause}
+            disabled={gameState.isBlackout}
+            className="px-4 py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-300 hover:text-yellow-300 rounded-lg font-mono text-xs tracking-wider flex items-center gap-2 transition-all shadow-[0_2px_15px_rgba(0,0,0,0.8)] cursor-pointer group"
+            title="Pause Shift [ESC]"
+          >
+            <Pause size={14} className="text-yellow-400 group-hover:scale-125 transition-transform" />
+            <span>PAUSE [ESC]</span>
+          </button>
+        </div>
+      )}
 
       {/* Bottom Center: CCTV Surveillance Flip Trigger */}
       <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-2 pointer-events-auto">

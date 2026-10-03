@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Play, ShieldAlert, Settings, HelpCircle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
@@ -8,34 +8,109 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   const [showLore, setShowLore] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
+  const [isGlitchCalm, setIsGlitchCalm] = useState(false);
+  const [glitchBurst, setGlitchBurst] = useState(false);
 
-  const handleToggleMute = () => {
+  // Play Main Menu BGM on mount and cleanup on unmount
+  useEffect(() => {
+    soundManager.playMenuBgm();
+    return () => {
+      soundManager.stopMenuBgm();
+    };
+  }, []);
+
+  // Moving grain & glitch cycle: active for ~4.5s, then disappears for 1.0s to feel alive!
+  useEffect(() => {
+    let calmTimer = null;
+    let burstTimer = null;
+
+    const cycleInterval = setInterval(() => {
+      // 1-second calm disappearance
+      setIsGlitchCalm(true);
+
+      calmTimer = setTimeout(() => {
+        setIsGlitchCalm(false);
+        // Sudden violent burst when snapping back
+        setGlitchBurst(true);
+        burstTimer = setTimeout(() => setGlitchBurst(false), 250);
+      }, 1000);
+    }, 5500);
+
+    return () => {
+      clearInterval(cycleInterval);
+      if (calmTimer) clearTimeout(calmTimer);
+      if (burstTimer) clearTimeout(burstTimer);
+    };
+  }, []);
+
+  const handleToggleMute = (e) => {
+    e.stopPropagation();
     const muted = soundManager.toggleMute();
     setIsMuted(muted);
+    if (!muted) {
+      soundManager.playMenuBgm();
+    }
   };
 
   const handleCustomStart = () => {
+    soundManager.stopMenuBgm();
     onStartGame(6, {
       abLevel: customAI.ab,
       dipuLevel: customAI.dipu,
       aadeshLevel: customAI.aadesh,
+      doorWaitTime: 1.0,
       hourSeconds: 50,
       label: 'Night 6 - Custom Night'
     });
   };
 
+  const handleStartShift = (night) => {
+    soundManager.stopMenuBgm();
+    onStartGame(night);
+  };
+
+  // Ensure music plays if browser blocked initial autoplay until click
+  const handleInteraction = () => {
+    soundManager.playMenuBgm();
+  };
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between p-8 select-none">
-      {/* Background menu image */}
+    <div 
+      onClick={handleInteraction}
+      className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between p-8 select-none"
+    >
+      {/* Background menu image with shaky glitch motion */}
       <div 
-        className="absolute inset-0 bg-cover bg-center opacity-90 filter contrast-110"
+        className={`absolute inset-0 bg-cover bg-center transition-all duration-200 ${
+          isGlitchCalm ? 'scale-100 filter contrast-105' : 'menu-bg-shaky filter contrast-115'
+        } ${glitchBurst ? 'translate-x-2.5 -translate-y-1.5 filter contrast-160 brightness-130' : ''}`}
         style={{ backgroundImage: `url('./assets/images/main-menu.jpg')` }}
+      />
+
+      {/* Moving Film Grain Overlay - Disappears for 1 second periodically */}
+      <div 
+        className={`grain-layer transition-opacity duration-300 ${
+          isGlitchCalm ? 'opacity-0' : 'opacity-25'
+        }`} 
       />
 
       {/* CRT Scanline & static overlay */}
       <div className="crt-overlay" />
       <div className="crt-vignette" />
-      <div className="absolute inset-0 static-fuzz pointer-events-none" />
+      <div 
+        className={`absolute inset-0 static-fuzz pointer-events-none transition-opacity duration-200 ${
+          isGlitchCalm ? 'opacity-5' : 'opacity-25'
+        }`} 
+      />
+
+      {/* Horizontal Glitch Tear Lines (Hidden during 1s calm period) */}
+      {!isGlitchCalm && (
+        <>
+          <div className="absolute top-[28%] inset-x-0 h-2 bg-white/25 mix-blend-screen glitch-slice-bar pointer-events-none" />
+          <div className="absolute top-[65%] inset-x-0 h-3 bg-red-600/30 mix-blend-color-dodge glitch-slice-bar pointer-events-none" style={{ animationDelay: '0.7s' }} />
+          <div className="absolute top-[44%] inset-x-0 h-1.5 bg-cyan-400/35 mix-blend-screen glitch-slice-bar pointer-events-none" style={{ animationDelay: '1.3s' }} />
+        </>
+      )}
 
       {/* Header controls */}
       <div className="relative z-10 flex justify-between items-center">
@@ -47,16 +122,16 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         <div className="flex items-center space-x-3">
           <button
             onClick={handleToggleMute}
-            className="p-2.5 rounded bg-black/70 hover:bg-red-950/80 border border-gray-700 hover:border-red-500 transition text-gray-300 hover:text-white flex items-center gap-2 text-sm"
+            className="p-2.5 rounded bg-black/70 hover:bg-red-950/80 border border-gray-700 hover:border-red-500 transition text-gray-300 hover:text-white flex items-center gap-2 text-sm cursor-pointer"
             title="Toggle Mute"
           >
             {isMuted ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-green-400" />}
-            <span>{isMuted ? 'MUTED' : 'AUDIO ON'}</span>
+            <span>{isMuted ? 'MUTED' : 'BGM ON'}</span>
           </button>
 
           <button
-            onClick={() => setShowLore(true)}
-            className="p-2.5 rounded bg-black/70 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 transition text-gray-300 flex items-center gap-1.5 text-sm"
+            onClick={(e) => { e.stopPropagation(); setShowLore(true); }}
+            className="p-2.5 rounded bg-black/70 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 transition text-gray-300 flex items-center gap-1.5 text-sm cursor-pointer"
           >
             <HelpCircle size={18} />
             <span>HOW TO PLAY</span>
@@ -65,7 +140,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
       </div>
 
       {/* Center Left Title & Main Navigation */}
-      <div className="relative z-10 max-w-md my-auto space-y-6 bg-black/60 p-6 rounded-lg border border-neutral-800 backdrop-blur-sm">
+      <div className="relative z-10 max-w-md my-auto space-y-6 bg-black/65 p-6 rounded-lg border border-neutral-800 backdrop-blur-sm shadow-2xl">
         <div>
           <h1 className="text-4xl md:text-5xl font-black tracking-wider text-red-600 glitch-text drop-shadow-[0_2px_10px_rgba(255,0,0,0.8)]">
             FIVE NIGHTS
@@ -81,16 +156,16 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         {/* Menu Actions */}
         <div className="space-y-3 pt-2">
           <button
-            onClick={() => onStartGame(currentNight)}
-            className="w-full py-3.5 px-6 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-lg rounded transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group"
+            onClick={() => handleStartShift(currentNight)}
+            className="w-full py-3.5 px-6 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-lg rounded transition-all duration-200 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group cursor-pointer"
           >
             <Play size={20} className="text-red-400 group-hover:scale-125 transition-transform" />
             <span>CONTINUE (NIGHT {currentNight})</span>
           </button>
 
           <button
-            onClick={() => onStartGame(1)}
-            className="w-full py-2.5 px-6 bg-black/80 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 text-gray-200 font-semibold tracking-wider text-sm rounded transition"
+            onClick={() => handleStartShift(1)}
+            className="w-full py-2.5 px-6 bg-black/80 hover:bg-neutral-800 border border-gray-700 hover:border-gray-400 text-gray-200 font-semibold tracking-wider text-sm rounded transition cursor-pointer"
           >
             NEW GAME (NIGHT 1)
           </button>
@@ -104,9 +179,9 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
                   key={n}
                   onClick={() => {
                     onSelectNight(n);
-                    onStartGame(n);
+                    handleStartShift(n);
                   }}
-                  className={`py-2 text-xs font-bold rounded border transition ${
+                  className={`py-2 text-xs font-bold rounded border transition cursor-pointer ${
                     n === currentNight
                       ? 'bg-red-600/30 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
                       : 'bg-black/50 border-neutral-700 hover:border-neutral-400 text-gray-400 hover:text-white'
@@ -119,8 +194,8 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
           </div>
 
           <button
-            onClick={() => setShowCustomNight(true)}
-            className="w-full py-2 px-4 bg-neutral-900 hover:bg-neutral-800 border border-yellow-600/50 hover:border-yellow-500 text-yellow-400 font-mono text-xs rounded transition flex items-center justify-center gap-2"
+            onClick={(e) => { e.stopPropagation(); setShowCustomNight(true); }}
+            className="w-full py-2 px-4 bg-neutral-900 hover:bg-neutral-800 border border-yellow-600/50 hover:border-yellow-500 text-yellow-400 font-mono text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <Settings size={14} />
             <span>CUSTOM NIGHT (AI CONFIG)</span>
@@ -136,6 +211,8 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
           <span>[D] Door Lock</span>
           <span>•</span>
           <span>[L] Hallway Light</span>
+          <span>•</span>
+          <span>[ESC] Pause</span>
         </div>
         <div className="text-gray-400 mt-2 md:mt-0">
           Kattaikonam Campus Security Division • 1987-2026
@@ -144,7 +221,10 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
       {/* How to play modal */}
       {showLore && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-neutral-900 border-2 border-red-600 rounded-lg max-w-lg w-full p-6 text-gray-200 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
               <h3 className="text-xl font-bold text-red-500 flex items-center gap-2">
@@ -153,7 +233,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
               </h3>
               <button 
                 onClick={() => setShowLore(false)}
-                className="text-gray-400 hover:text-white text-lg font-mono font-bold"
+                className="text-gray-400 hover:text-white text-lg font-mono font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -180,7 +260,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
             <button
               onClick={() => setShowLore(false)}
-              className="w-full py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded tracking-wider uppercase text-sm"
+              className="w-full py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded tracking-wider uppercase text-sm cursor-pointer"
             >
               UNDERSTOOD, COMMENCE SHIFT
             </button>
@@ -190,7 +270,10 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
       {/* Custom Night AI Level Modal */}
       {showCustomNight && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-neutral-900 border-2 border-yellow-600 rounded-lg max-w-md w-full p-6 text-gray-200 space-y-5 shadow-2xl">
             <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
               <h3 className="text-lg font-bold text-yellow-400 flex items-center gap-2">
@@ -199,7 +282,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
               </h3>
               <button 
                 onClick={() => setShowCustomNight(false)}
-                className="text-gray-400 hover:text-white font-mono"
+                className="text-gray-400 hover:text-white font-mono cursor-pointer"
               >
                 ✕
               </button>
@@ -231,13 +314,13 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setCustomAI({ ab: 20, dipu: 20, aadesh: 20 })}
-                className="flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs text-red-400 font-bold border border-red-500/50 rounded"
+                className="flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs text-red-400 font-bold border border-red-500/50 rounded cursor-pointer"
               >
                 20/20/20 MODE
               </button>
               <button
                 onClick={handleCustomStart}
-                className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold text-xs rounded"
+                className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold text-xs rounded cursor-pointer"
               >
                 START CUSTOM NIGHT
               </button>

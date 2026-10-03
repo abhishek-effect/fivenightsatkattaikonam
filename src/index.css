@@ -86,6 +86,66 @@ body {
   animation: text-glitch 0.25s infinite;
 }
 
+/* Main Menu Shaky / Glitchy Motion */
+@keyframes menu-shaky-motion {
+  0% { transform: scale(1.04) translate(0, 0); }
+  10% { transform: scale(1.05) translate(-3px, 2px); }
+  22% { transform: scale(1.04) translate(2px, -3px); }
+  35% { transform: scale(1.06) translate(-6px, 4px) skewX(0.8deg); }
+  37% { transform: scale(1.04) translate(5px, -2px) skewX(-0.8deg); }
+  39% { transform: scale(1.04) translate(0, 0); }
+  55% { transform: scale(1.05) translate(3px, 3px); }
+  72% { transform: scale(1.04) translate(-2px, -1px); }
+  85% { transform: scale(1.07) translate(-8px, -4px) skewX(-1.2deg); filter: contrast(135%) brightness(1.2); }
+  87% { transform: scale(1.04) translate(6px, 4px) skewX(1deg); filter: contrast(110%) brightness(1.0); }
+  89% { transform: scale(1.04) translate(0, 0); }
+  100% { transform: scale(1.04) translate(0, 0); }
+}
+
+.menu-bg-shaky {
+  animation: menu-shaky-motion 3.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+/* Moving Film Grain Overlay */
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-3%, -7%); }
+  20% { transform: translate(-8%, 4%); }
+  30% { transform: translate(5%, -12%); }
+  40% { transform: translate(-4%, 14%); }
+  50% { transform: translate(-10%, 6%); }
+  60% { transform: translate(9%, 0%); }
+  70% { transform: translate(0%, 9%); }
+  80% { transform: translate(3%, 18%); }
+  90% { transform: translate(-6%, 5%); }
+}
+
+.grain-layer {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.7'/%3E%3C/svg%3E");
+  animation: grain-shift 0.4s steps(6) infinite;
+  pointer-events: none;
+}
+
+/* Horizontal Glitch Tear Lines */
+@keyframes glitch-slice {
+  0%, 100% { opacity: 0; transform: translateY(0) scaleX(1); }
+  15% { opacity: 0.8; transform: translateY(40px) scaleX(1.02); }
+  18% { opacity: 0; }
+  45% { opacity: 0.9; transform: translateY(-80px) scaleX(0.98); }
+  48% { opacity: 0; }
+  85% { opacity: 0.95; transform: translateY(120px) scaleX(1.05); }
+  88% { opacity: 0; }
+}
+
+.glitch-slice-bar {
+  animation: glitch-slice 2.4s ease-in-out infinite;
+}
+
 /* Jumpscare violent screen shake */
 @keyframes jumpscare-shake {
   0% { transform: scale(1.1) translate(10px, 15px) rotate(1deg); }

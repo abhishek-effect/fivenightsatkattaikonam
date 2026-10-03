@@ -11,7 +11,7 @@ class SoundManager {
     this.knockAudio = null;
     this.sprintAudio = null;
     this.heartbeatTimer = null;
-    this.blackoutInterval = null;
+    this.menuBgm = null;
     this.initAudioAssets();
   }
 
@@ -40,6 +40,10 @@ class SoundManager {
 
       this.sprintAudio = new Audio('./assets/audio/running-sfx.mp3');
       this.sprintAudio.preload = 'auto';
+
+      this.menuBgm = new Audio('./assets/audio/main-menu-bgm.mp3');
+      this.menuBgm.preload = 'auto';
+      this.menuBgm.loop = true;
     } catch (e) {
       console.warn('Audio assets init error:', e);
     }
@@ -53,7 +57,51 @@ class SoundManager {
     if (this.jumpscareAudio) this.jumpscareAudio.muted = this.isMuted;
     if (this.knockAudio) this.knockAudio.muted = this.isMuted;
     if (this.sprintAudio) this.sprintAudio.muted = this.isMuted;
+    if (this.menuBgm) this.menuBgm.muted = this.isMuted;
     return this.isMuted;
+  }
+
+  // --- MAIN MENU BGM ---
+  playMenuBgm() {
+    this.initContext();
+    if (this.isMuted) return;
+
+    if (this.menuBgm) {
+      try {
+        this.menuBgm.volume = this.isMuted ? 0 : 0.65;
+        this.menuBgm.loop = true;
+        const p = this.menuBgm.play();
+        if (p) p.catch(() => {});
+      } catch (_) {}
+    }
+  }
+
+  stopMenuBgm() {
+    if (this.menuBgm) {
+      try {
+        this.menuBgm.pause();
+        this.menuBgm.currentTime = 0;
+      } catch (_) {}
+    }
+  }
+
+  // --- PAUSE & RESUME GAME AUDIO ---
+  pauseGameAudio() {
+    if (this.fanGain && this.ctx) {
+      this.fanGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+    }
+    if (this.sprintAudio) {
+      try { this.sprintAudio.pause(); } catch (_) {}
+    }
+  }
+
+  resumeGameAudio() {
+    if (this.fanGain && this.ctx && !this.isMuted) {
+      this.fanGain.gain.setTargetAtTime(0.15, this.ctx.currentTime, 0.1);
+    }
+    if (this.sprintAudio && this.sprintAudio.currentTime > 0) {
+      try { this.sprintAudio.play().catch(() => {}); } catch (_) {}
+    }
   }
 
   // --- RETRO STUDIO INTRO JINGLE ---
