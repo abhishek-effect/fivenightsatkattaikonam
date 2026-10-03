@@ -15,6 +15,7 @@ export default function App() {
   const [currentNight, setCurrentNight] = useState(1);
   const [gameState, setGameState] = useState(null);
   const [jumpscareTarget, setJumpscareTarget] = useState(null);
+  const [isDoorBanging, setIsDoorBanging] = useState(false);
   const customConfigRef = useRef(null);
 
   // Load highest saved night from localStorage
@@ -73,6 +74,7 @@ export default function App() {
   const handleMainMenu = () => {
     soundManager.stopFan();
     soundManager.stopHeartbeat();
+    soundManager.stopSprintRunning();
     soundManager.stopBlackoutMusic();
     setScreen('MENU');
   };
@@ -89,13 +91,19 @@ export default function App() {
         break;
 
       case 'DIPU_SPRINT':
-        soundManager.playFootstep(true);
-        setTimeout(() => soundManager.playFootstep(true), 140);
-        setTimeout(() => soundManager.playFootstep(true), 280);
+        soundManager.playSprintRunning();
+        break;
+
+      case 'ENEMY_AT_DOOR':
+        soundManager.startHeartbeat();
         break;
 
       case 'DOOR_DEFENSE':
-        soundManager.playDoorBang();
+        soundManager.stopSprintRunning();
+        soundManager.stopHeartbeat();
+        soundManager.playDoorKnock();
+        setIsDoorBanging(true);
+        setTimeout(() => setIsDoorBanging(false), 900);
         break;
 
       case 'AADESH_AT_BLIND_SPOT':
@@ -105,11 +113,13 @@ export default function App() {
       case 'BLACKOUT_START':
         soundManager.stopFan();
         soundManager.stopHeartbeat();
+        soundManager.stopSprintRunning();
         soundManager.playBlackoutMusic();
         break;
 
       case 'JUMPSCARE':
         soundManager.stopHeartbeat();
+        soundManager.stopSprintRunning();
         soundManager.stopBlackoutMusic();
         setJumpscareTarget(event.animatronic);
         setScreen('JUMPSCARE');
@@ -118,6 +128,7 @@ export default function App() {
       case 'GAME_WIN':
         soundManager.stopFan();
         soundManager.stopHeartbeat();
+        soundManager.stopSprintRunning();
         soundManager.stopBlackoutMusic();
         setScreen('WIN');
         break;
@@ -138,9 +149,9 @@ export default function App() {
       lastTime = now;
 
       gameState.tick(dt, handleGameEvent);
-    // Trigger safe state clone to refresh React tree without losing prototype
-    setGameState(prev => (prev ? Object.assign(Object.create(Object.getPrototypeOf(prev)), prev) : prev));
-  }, 100);
+      // Trigger safe state clone to refresh React tree without losing prototype
+      setGameState(prev => (prev ? Object.assign(Object.create(Object.getPrototypeOf(prev)), prev) : prev));
+    }, 100);
 
     return () => clearInterval(interval);
   }, [screen, gameState, handleGameEvent]);
@@ -154,11 +165,18 @@ export default function App() {
   // Player action handlers
   const handleToggleDoor = useCallback(() => {
     if (!gameState || gameState.isBlackout) return;
-    const newState = !gameState.isDoorClosed;
-    gameState.isDoorClosed = newState;
-    soundManager.playDoorToggle(newState);
+    const willClose = !gameState.isDoorClosed;
+    soundManager.playDoorToggle(willClose);
+
+    if (willClose) {
+      // Toggle door with active defense check: if enemy is standing at the door, bangs & retreats!
+      gameState.toggleDoor(handleGameEvent);
+    } else {
+      gameState.isDoorClosed = false;
+    }
+
     setGameState(refreshGameState(gameState));
-  }, [gameState, refreshGameState]);
+  }, [gameState, refreshGameState, handleGameEvent]);
 
   const handleToggleLight = useCallback(() => {
     if (!gameState || gameState.isBlackout) return;
@@ -231,6 +249,7 @@ export default function App() {
             onToggleDoor={handleToggleDoor}
             onToggleLight={handleToggleLight}
             onToggleMonitor={handleToggleMonitor}
+            isDoorBanging={isDoorBanging}
           />
 
           {gameState.isMonitorOpen && (

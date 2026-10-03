@@ -54,19 +54,45 @@ export class GameState {
     };
 
     this.dipu = {
-      stage: 0, // 0 = In CAM_3, 1 = Peeking CAM_3, 2 = Sprinting down CAM_2, 3 = At Door
+      stage: 0, // 0 = In CAM_3, 1 = Peeking CAM_3, 2 = Sprinting down CAM_2
       sprintTimer: 0,
       stallTimer: 0,
     };
 
     this.aadesh = {
-      location: 'CAM_4', // CAM_4 -> CAM_2 -> BLIND_SPOT (outside office window/door)
+      location: 'CAM_4', // CAM_4 -> CAM_1/CAM_2 -> BLIND_SPOT (outside doorway)
       atBlindSpotTimer: 0,
     };
   }
 
   getUsageBars() {
     return getUsageBars(this);
+  }
+
+  // Handle door toggle from player
+  toggleDoor(onEvent) {
+    if (this.isBlackout) return false;
+    const willClose = !this.isDoorClosed;
+    this.isDoorClosed = willClose;
+
+    if (willClose) {
+      // If player closes the door while an enemy stands there, bang and retreat!
+      let enemyDefended = false;
+      if (this.ab.location === 'DOOR') {
+        this.ab.location = 'CAM_2';
+        this.ab.atDoorTimer = 0;
+        enemyDefended = true;
+        if (onEvent) onEvent({ type: 'DOOR_DEFENSE', animatronic: 'ab' });
+      }
+      if (this.aadesh.location === 'BLIND_SPOT') {
+        this.aadesh.location = 'CAM_4';
+        this.aadesh.atBlindSpotTimer = 0;
+        enemyDefended = true;
+        if (onEvent) onEvent({ type: 'DOOR_DEFENSE', animatronic: 'aadesh' });
+      }
+      return enemyDefended;
+    }
+    return false;
   }
 
   // Advance game logic by deltaSeconds
@@ -126,14 +152,14 @@ export class GameState {
     // If already at door
     if (this.ab.location === 'DOOR') {
       if (this.isDoorClosed) {
-        // Blocked! Bangs on door and retreats
+        // Closed door blocks AB: bangs loudly on door and retreats!
         onEvent({ type: 'DOOR_DEFENSE', animatronic: 'ab' });
         this.ab.location = 'CAM_2';
         this.ab.atDoorTimer = 0;
       } else {
         this.ab.atDoorTimer += dt;
-        // Unprotected door: jumpscare after 3.5s
-        if (this.ab.atDoorTimer >= 3.5) {
+        // Stands at the door for exactly 5.0 seconds before jumpscaring
+        if (this.ab.atDoorTimer >= 5.0) {
           this.triggerJumpscare('ab', onEvent);
         }
       }
@@ -150,8 +176,23 @@ export class GameState {
         const path = ['CAM_1', 'CAM_2', 'CAM_4', 'DOOR'];
         const curIdx = path.indexOf(this.ab.location);
         if (curIdx < path.length - 1) {
-          this.ab.location = path[curIdx + 1];
-          onEvent({ type: 'MOVEMENT', animatronic: 'ab', to: this.ab.location });
+          const nextLoc = path[curIdx + 1];
+          if (nextLoc === 'DOOR') {
+            if (this.isDoorClosed) {
+              // Approaches closed door: bangs on the door and is repelled!
+              onEvent({ type: 'DOOR_DEFENSE', animatronic: 'ab' });
+              this.ab.location = 'CAM_2';
+              this.ab.atDoorTimer = 0;
+            } else {
+              // Enters open doorway: stands for 5 seconds
+              this.ab.location = 'DOOR';
+              this.ab.atDoorTimer = 0;
+              onEvent({ type: 'ENEMY_AT_DOOR', animatronic: 'ab' });
+            }
+          } else {
+            this.ab.location = nextLoc;
+            onEvent({ type: 'MOVEMENT', animatronic: 'ab', to: this.ab.location });
+          }
         }
       }
     }
@@ -178,15 +219,17 @@ export class GameState {
 
         if (this.dipu.stage === 2) {
           // Dipu begins sprint!
+          this.dipu.sprintTimer = 0;
           onEvent({ type: 'DIPU_SPRINT' });
         }
       }
     } else if (this.dipu.stage === 2) {
-      // Sprinting down hallway! Player has 3-4s to close the door!
+      // Sprinting down hallway! Sped-up sprint running SFX plays.
+      // Reaches the office in ~2.6 seconds.
       this.dipu.sprintTimer += dt;
-      if (this.dipu.sprintTimer >= 3.2) {
+      if (this.dipu.sprintTimer >= 2.6) {
         if (this.isDoorClosed) {
-          // Blocked by door!
+          // Blocked by closed door! Bangs heavily on door and retreats to CAM_3
           onEvent({ type: 'DOOR_DEFENSE', animatronic: 'dipu' });
           this.dipu.stage = 0;
           this.dipu.sprintTimer = 0;
@@ -194,6 +237,7 @@ export class GameState {
           // Drain 4% power from the heavy impact!
           this.power = Math.max(0, this.power - 4);
         } else {
+          // Door is open: IMMEDIATELY ends game without waiting at door!
           this.triggerJumpscare('dipu', onEvent);
         }
       }
@@ -204,14 +248,14 @@ export class GameState {
   updateAadesh(dt, onEvent) {
     if (this.aadesh.location === 'BLIND_SPOT') {
       if (this.isDoorClosed) {
-        // Blocked!
+        // Blocked by closed door! Bangs loudly on door and retreats
         onEvent({ type: 'DOOR_DEFENSE', animatronic: 'aadesh' });
         this.aadesh.location = 'CAM_4';
         this.aadesh.atBlindSpotTimer = 0;
       } else {
         this.aadesh.atBlindSpotTimer += dt;
-        // Jumpscare after 4 seconds if door remains open
-        if (this.aadesh.atBlindSpotTimer >= 4.0) {
+        // Stands at the door for exactly 5.0 seconds before jumpscaring
+        if (this.aadesh.atBlindSpotTimer >= 5.0) {
           this.triggerJumpscare('aadesh', onEvent);
         }
       }
@@ -230,8 +274,17 @@ export class GameState {
           this.aadesh.location = 'CAM_2';
           onEvent({ type: 'MOVEMENT', animatronic: 'aadesh', to: 'CAM_2' });
         } else if (this.aadesh.location === 'CAM_2') {
-          this.aadesh.location = 'BLIND_SPOT';
-          onEvent({ type: 'AADESH_AT_BLIND_SPOT' });
+          if (this.isDoorClosed) {
+            // Approaches closed door: bangs on the door and retreats!
+            onEvent({ type: 'DOOR_DEFENSE', animatronic: 'aadesh' });
+            this.aadesh.location = 'CAM_4';
+            this.aadesh.atBlindSpotTimer = 0;
+          } else {
+            // Enters blind spot outside door: stands for 5 seconds
+            this.aadesh.location = 'BLIND_SPOT';
+            this.aadesh.atBlindSpotTimer = 0;
+            onEvent({ type: 'ENEMY_AT_DOOR', animatronic: 'aadesh' });
+          }
         }
       }
     }

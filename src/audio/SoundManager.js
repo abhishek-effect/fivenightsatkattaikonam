@@ -8,9 +8,11 @@ class SoundManager {
     this.fanNode = null;
     this.fanGain = null;
     this.jumpscareAudio = null;
+    this.knockAudio = null;
+    this.sprintAudio = null;
     this.heartbeatTimer = null;
     this.blackoutInterval = null;
-    this.initJumpscare();
+    this.initAudioAssets();
   }
 
   initContext() {
@@ -28,12 +30,18 @@ class SoundManager {
     }
   }
 
-  initJumpscare() {
+  initAudioAssets() {
     try {
       this.jumpscareAudio = new Audio('./assets/audio/jumpscare.mp3');
       this.jumpscareAudio.preload = 'auto';
+
+      this.knockAudio = new Audio('./assets/audio/knock-sfx.mp3');
+      this.knockAudio.preload = 'auto';
+
+      this.sprintAudio = new Audio('./assets/audio/running-sfx.mp3');
+      this.sprintAudio.preload = 'auto';
     } catch (e) {
-      console.warn('Jumpscare audio init error:', e);
+      console.warn('Audio assets init error:', e);
     }
   }
 
@@ -42,9 +50,9 @@ class SoundManager {
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 1, this.ctx.currentTime, 0.05);
     }
-    if (this.jumpscareAudio) {
-      this.jumpscareAudio.muted = this.isMuted;
-    }
+    if (this.jumpscareAudio) this.jumpscareAudio.muted = this.isMuted;
+    if (this.knockAudio) this.knockAudio.muted = this.isMuted;
+    if (this.sprintAudio) this.sprintAudio.muted = this.isMuted;
     return this.isMuted;
   }
 
@@ -222,7 +230,6 @@ class SoundManager {
     if (!this.ctx || this.isMuted) return;
 
     const now = this.ctx.currentTime;
-    // Heavy pneumatic clunk
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -290,25 +297,90 @@ class SoundManager {
     osc.stop(now + 0.25);
   }
 
-  // --- DOOR BANG (WHEN ANIMATRONIC HITS CLOSED DOOR) ---
-  playDoorBang() {
+  // --- DIPU RAPID SPRINT RUNNING SFX ---
+  playSprintRunning() {
+    this.stopSprintRunning();
     this.initContext();
+    if (this.isMuted) return;
+
+    if (this.sprintAudio) {
+      try {
+        this.sprintAudio.currentTime = 0;
+        this.sprintAudio.playbackRate = 1.35; // Sped up as requested
+        this.sprintAudio.volume = this.isMuted ? 0 : 1;
+        const playPromise = this.sprintAudio.play();
+        if (playPromise) {
+          playPromise.catch(() => this.synthesizeFastSprint());
+        }
+      } catch (_) {
+        this.synthesizeFastSprint();
+      }
+    } else {
+      this.synthesizeFastSprint();
+    }
+  }
+
+  stopSprintRunning() {
+    if (this.sprintAudio) {
+      try {
+        this.sprintAudio.pause();
+        this.sprintAudio.currentTime = 0;
+      } catch (_) {}
+    }
+  }
+
+  synthesizeFastSprint() {
+    if (!this.ctx || this.isMuted) return;
+    const steps = 14;
+    for (let i = 0; i < steps; i++) {
+      setTimeout(() => {
+        this.playFootstep(true);
+      }, i * 140);
+    }
+  }
+
+  // --- DOOR KNOCK / BANG (WHEN ANIMATRONIC BANGS ON CLOSED DOOR) ---
+  playDoorKnock() {
+    this.initContext();
+    if (this.isMuted) return;
+
+    if (this.knockAudio) {
+      try {
+        this.knockAudio.currentTime = 0;
+        this.knockAudio.volume = this.isMuted ? 0 : 1;
+        const playPromise = this.knockAudio.play();
+        if (playPromise) {
+          playPromise.catch(() => this.synthesizeDoorBang());
+        }
+      } catch (_) {
+        this.synthesizeDoorBang();
+      }
+    } else {
+      this.synthesizeDoorBang();
+    }
+  }
+
+  playDoorBang() {
+    this.playDoorKnock();
+  }
+
+  synthesizeDoorBang() {
     if (!this.ctx || this.isMuted) return;
 
     const now = this.ctx.currentTime;
-    [0, 0.12, 0.25].forEach(delay => {
+    [0.0, 0.15, 0.31, 0.48, 0.66].forEach((delay, idx) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(110, now + delay);
-      osc.frequency.exponentialRampToValueAtTime(30, now + delay + 0.15);
-      gain.gain.setValueAtTime(0.45, now + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.18);
+      osc.frequency.setValueAtTime(120 - idx * 5, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(32, now + delay + 0.16);
+      gain.gain.setValueAtTime(0.55, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.22);
 
       osc.connect(gain);
       gain.connect(this.masterGain);
       osc.start(now + delay);
-      osc.stop(now + delay + 0.2);
+      osc.stop(now + delay + 0.25);
     });
   }
 
@@ -367,7 +439,6 @@ class SoundManager {
     this.initContext();
     if (!this.ctx || this.isMuted) return;
 
-    // Toreador march melody fragments (FNAF style music box)
     const melody = [
       { f: 392.00, d: 0.3 }, // G4
       { f: 392.00, d: 0.3 }, // G4
@@ -390,8 +461,8 @@ class SoundManager {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'triangle'; // chime/music box metallic feel
-      osc.frequency.value = note.f * 1.5; // music box octave
+      osc.type = 'triangle';
+      osc.frequency.value = note.f * 1.5;
       gain.gain.setValueAtTime(0.25, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + note.d * 1.2);
 
@@ -416,6 +487,7 @@ class SoundManager {
     this.stopFan();
     this.stopHeartbeat();
     this.stopBlackoutMusic();
+    this.stopSprintRunning();
     this.initContext();
 
     if (this.jumpscareAudio) {

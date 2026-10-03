@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Lock, Unlock, Lightbulb } from 'lucide-react';
+import { Zap, Lock, Unlock, Lightbulb, ShieldAlert } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 
@@ -8,6 +8,7 @@ export default function OfficeView({
   onToggleDoor,
   onToggleLight,
   onToggleMonitor,
+  isDoorBanging,
 }) {
   const [panX, setPanX] = useState(0); // -10 to +10% horizontal panning
   const containerRef = useRef(null);
@@ -28,15 +29,21 @@ export default function OfficeView({
   const usageBars = typeof gameState?.getUsageBars === 'function' ? gameState.getUsageBars() : getUsageBars(gameState);
   const usageColors = ['bg-emerald-500', 'bg-emerald-500', 'bg-yellow-500', 'bg-orange-500', 'bg-red-600'];
 
-  // Animatronics visibility when light is active
+  // Animatronics visibility when light is active (they stand outside door for 5s)
   const showAadeshAtDoor = isLightActive && gameState.aadesh.location === 'BLIND_SPOT' && !isDoorLocked;
   const showABAtDoor = isLightActive && gameState.ab.location === 'DOOR' && !isDoorLocked;
+
+  // Lurking threat indicator in the pitch dark doorway
+  const threatInDarkness = !isLightActive && !gameState.isBlackout && !isDoorLocked && 
+    (gameState.ab.location === 'DOOR' || gameState.aadesh.location === 'BLIND_SPOT');
 
   return (
     <div 
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative w-screen h-screen overflow-hidden bg-black select-none"
+      className={`relative w-screen h-screen overflow-hidden bg-black select-none ${
+        isDoorBanging ? 'door-impact-shake' : ''
+      }`}
     >
       {/* Blackout overlay */}
       {gameState.isBlackout && (
@@ -60,60 +67,97 @@ export default function OfficeView({
           transform: `translateX(${-panX}%)`
         }}
       >
-        {/* Main Office Image (Seamlessly swaps between DoorOpen and DoorClosed) */}
+        {/* Main Office Image (Door area is shrouded in darkness unless Light is turned ON) */}
         <img
           src={isDoorLocked ? './assets/images/office-door-closed.jpg' : './assets/images/office-door-open.jpg'}
           alt={isDoorLocked ? 'Door Closed' : 'Door Open'}
-          className={`w-full h-full object-cover transition-all duration-200 ${
+          className={`w-full h-full object-cover transition-all duration-150 ${
             gameState.isBlackout
-              ? 'brightness-[0.05] contrast-200'
+              ? 'brightness-[0.04] contrast-200'
               : isLightActive
-                ? 'brightness-135 contrast-110 saturate-110'
-                : 'brightness-[0.68] contrast-115'
+                ? 'brightness-120 contrast-110 saturate-110'
+                : 'brightness-[0.58] contrast-125'
           }`}
         />
 
-        {/* Dynamic Light Beam Illumination Effect when LIGHT is active */}
+        {/* DOORWAY DARKNESS SHROUD: When hallway Light is OFF, the doorway is pitch black */}
+        {!isLightActive && !gameState.isBlackout && (
+          <div 
+            className="absolute inset-y-0 pointer-events-none transition-opacity duration-200 z-10 flex items-center justify-center"
+            style={{
+              left: '46%',
+              width: '38%',
+              background: 'radial-gradient(ellipse 95% 90% at 50% 50%, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.96) 65%, rgba(0,0,0,0.6) 88%, transparent 100%)'
+            }}
+          >
+            {/* Subtle red eye reflection when an animatronic stands lurking in the dark doorway */}
+            {threatInDarkness && (
+              <div className="absolute top-[38%] left-[45%] flex gap-5 items-center pointer-events-none animate-pulse">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_12px_#dc2626] opacity-80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_12px_#dc2626] opacity-80" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* HALLWAY LIGHT ILLUMINATION BEAM: Casts bright light onto the door/hallway */}
         {isLightActive && (
-          <div className="absolute inset-0 pointer-events-none mix-blend-screen bg-[radial-gradient(ellipse_at_65%_45%,_rgba(255,245,200,0.45)_0%,_rgba(255,230,150,0.25)_40%,_transparent_80%)]" />
+          <>
+            <div 
+              className="absolute inset-y-0 pointer-events-none mix-blend-screen transition-opacity duration-150 z-10"
+              style={{
+                left: '44%',
+                width: '42%',
+                background: 'radial-gradient(ellipse 85% 90% at 50% 45%, rgba(255, 252, 230, 0.85) 0%, rgba(255, 240, 180, 0.5) 45%, rgba(255, 215, 120, 0.2) 75%, transparent 100%)'
+              }}
+            />
+            <div className="absolute inset-0 pointer-events-none bg-amber-400/5 mix-blend-color-dodge z-10" />
+          </>
         )}
 
         {/* Ambient Dark Security Room Tint when light is OFF */}
         {!isLightActive && !gameState.isBlackout && (
-          <div className="absolute inset-0 bg-blue-950/20 pointer-events-none mix-blend-multiply" />
+          <div className="absolute inset-0 bg-blue-950/25 pointer-events-none mix-blend-multiply z-5" />
         )}
 
-        {/* THREAT EXPOSED BY LIGHT: Aadesh at the blind spot */}
+        {/* THREAT EXPOSED BY LIGHT: Aadesh standing at the open doorway */}
         {showAadeshAtDoor && (
-          <div className="absolute top-[26%] left-[58%] w-60 md:w-80 pointer-events-none animate-pulse z-20">
+          <div className="absolute top-[22%] left-[54%] w-64 md:w-84 pointer-events-none animate-pulse z-20 transition-all duration-100">
             <img 
               src="./assets/images/aadesh-jumpscare-cutout.png" 
               alt="Aadesh at Doorway" 
-              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_30px_rgba(255,0,0,0.9)]"
+              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_40px_rgba(255,255,255,0.9)]"
             />
           </div>
         )}
 
         {/* THREAT EXPOSED BY LIGHT: AB standing at the open doorway */}
         {showABAtDoor && (
-          <div className="absolute bottom-[20%] left-[56%] w-72 md:w-96 pointer-events-none animate-pulse z-20">
+          <div className="absolute bottom-[14%] left-[52%] w-72 md:w-96 pointer-events-none animate-pulse z-20 transition-all duration-100">
             <img 
               src="./assets/images/ab-cutout.png" 
               alt="AB at Open Doorway" 
-              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_30px_rgba(220,38,38,0.9)]"
+              className="w-full object-contain filter contrast-125 drop-shadow-[0_0_40px_rgba(255,255,255,0.9)]"
             />
+          </div>
+        )}
+
+        {/* DOOR KNOCK / BANG IMPACT EFFECT */}
+        {isDoorBanging && (
+          <div className="absolute top-[28%] left-[56%] z-30 pointer-events-none animate-bounce">
+            <div className="bg-red-600/90 text-white font-mono font-black text-sm px-4 py-2 rounded-lg border-2 border-yellow-300 shadow-[0_0_30px_rgba(220,38,38,1)] flex items-center gap-2">
+              <ShieldAlert size={20} className="text-yellow-300 animate-spin" />
+              <span>BANG! BANG! BANG!</span>
+            </div>
           </div>
         )}
 
         {/* Classic Spinning Security Desk Fan (Mounted in lower-left on the counter) */}
         <div className="absolute bottom-10 left-[18%] z-15 pointer-events-none">
           <div className="relative w-36 h-36 flex items-center justify-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
-            {/* Stand */}
             <div className="absolute bottom-2 w-24 h-4 bg-neutral-900 border border-neutral-700 rounded-full" />
             <div className="absolute bottom-5 w-5 h-16 bg-neutral-800" />
-            {/* Fan Cage */}
             <div className="absolute w-28 h-28 rounded-full border-2 border-neutral-600 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
-              {/* Spinning Blades */}
               <div className={`relative w-24 h-24 ${!gameState.isBlackout ? 'fan-rotating' : ''}`}>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-cyan-600 z-10 shadow-[0_0_8px_#06b6d4]" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-neutral-300 rounded-full shadow" />
@@ -125,8 +169,8 @@ export default function OfficeView({
           </div>
         </div>
 
-        {/* Industrial Door & Light Control Wall Panel (Positioned near the door) */}
-        <div className="absolute top-1/3 right-[15%] z-25 bg-neutral-950/95 border-2 border-neutral-700 rounded-xl p-3.5 shadow-2xl flex flex-col items-center gap-5 backdrop-blur-sm">
+        {/* Industrial Door & Light Control Wall Panel (Positioned right beside the doorway) */}
+        <div className="absolute top-1/3 right-[14%] z-25 bg-neutral-950/95 border-2 border-neutral-700 rounded-xl p-3.5 shadow-2xl flex flex-col items-center gap-5 backdrop-blur-sm">
           <div className="text-[11px] font-bold text-gray-400 font-mono tracking-widest border-b border-neutral-800 pb-1 w-full text-center">
             DOOR CONTROLS
           </div>
