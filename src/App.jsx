@@ -138,12 +138,18 @@ export default function App() {
       lastTime = now;
 
       gameState.tick(dt, handleGameEvent);
-      // Trigger shallow state clone to refresh React tree
-      setGameState(Object.assign(Object.create(Object.getPrototypeOf(gameState)), gameState));
-    }, 100);
+    // Trigger safe state clone to refresh React tree without losing prototype
+    setGameState(prev => (prev ? Object.assign(Object.create(Object.getPrototypeOf(prev)), prev) : prev));
+  }, 100);
 
     return () => clearInterval(interval);
   }, [screen, gameState, handleGameEvent]);
+
+  // Safe prototype-preserving clone
+  const refreshGameState = useCallback((state) => {
+    if (!state) return null;
+    return Object.assign(Object.create(Object.getPrototypeOf(state)), state);
+  }, []);
 
   // Player action handlers
   const handleToggleDoor = useCallback(() => {
@@ -151,30 +157,30 @@ export default function App() {
     const newState = !gameState.isDoorClosed;
     gameState.isDoorClosed = newState;
     soundManager.playDoorToggle(newState);
-    setGameState({ ...gameState });
-  }, [gameState]);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState]);
 
   const handleToggleLight = useCallback(() => {
     if (!gameState || gameState.isBlackout) return;
     const newState = !gameState.isLightOn;
     gameState.isLightOn = newState;
     soundManager.playLightToggle(newState);
-    setGameState({ ...gameState });
-  }, [gameState]);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState]);
 
   const handleToggleMonitor = useCallback(() => {
     if (!gameState || gameState.isBlackout) return;
     const newState = !gameState.isMonitorOpen;
     gameState.isMonitorOpen = newState;
     soundManager.playCameraFlip(newState);
-    setGameState({ ...gameState });
-  }, [gameState]);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState]);
 
   const handleSelectCam = useCallback((camId) => {
     if (!gameState) return;
     gameState.currentCam = camId;
-    setGameState({ ...gameState });
-  }, [gameState]);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState]);
 
   // Keyboard shortcut listener: Space (Monitor), D (Door), L (Light)
   useEffect(() => {

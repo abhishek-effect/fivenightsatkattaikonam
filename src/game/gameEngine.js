@@ -16,6 +16,16 @@ export const NIGHT_PRESETS = {
   5: { hourSeconds: 60, abLevel: 18, dipuLevel: 17, aadeshLevel: 18, label: 'Night 5 - Final Shift' },
 };
 
+// Standalone helper function for usage bars calculation
+export function getUsageBars(state) {
+  if (!state || state.isBlackout) return 0;
+  let bars = 1; // base usage
+  if (state.isDoorClosed) bars += 2;
+  if (state.isLightOn) bars += 1;
+  if (state.isMonitorOpen) bars += 1;
+  return Math.min(5, bars);
+}
+
 export class GameState {
   constructor(night = 1, customConfig = null) {
     const config = customConfig || NIGHT_PRESETS[night] || NIGHT_PRESETS[1];
@@ -55,14 +65,8 @@ export class GameState {
     };
   }
 
-  // Calculate current power consumption usage bars (1 to 5)
   getUsageBars() {
-    if (this.isBlackout) return 0;
-    let bars = 1; // base usage
-    if (this.isDoorClosed) bars += 2;
-    if (this.isLightOn) bars += 1;
-    if (this.isMonitorOpen) bars += 1;
-    return Math.min(5, bars);
+    return getUsageBars(this);
   }
 
   // Advance game logic by deltaSeconds

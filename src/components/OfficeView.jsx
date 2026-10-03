@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Zap, Lock, Unlock, Lightbulb } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
+import { getUsageBars } from '../game/gameEngine';
 
 export default function OfficeView({
   gameState,
@@ -24,7 +25,7 @@ export default function OfficeView({
   const isDoorLocked = gameState.isDoorClosed && !gameState.isBlackout;
 
   // Usage bars visual
-  const usageBars = gameState.getUsageBars();
+  const usageBars = typeof gameState?.getUsageBars === 'function' ? gameState.getUsageBars() : getUsageBars(gameState);
   const usageColors = ['bg-emerald-500', 'bg-emerald-500', 'bg-yellow-500', 'bg-orange-500', 'bg-red-600'];
 
   // Animatronics visibility when light is active
