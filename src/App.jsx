@@ -8,9 +8,10 @@ import NightIntro from './components/NightIntro';
 import JumpscareOverlay from './components/JumpscareOverlay';
 import NightWinScreen from './components/NightWinScreen';
 import GameOverScreen from './components/GameOverScreen';
+import StudioIntro from './components/StudioIntro';
 
 export default function App() {
-  const [screen, setScreen] = useState('MENU'); // MENU, INTRO, PLAYING, JUMPSCARE, GAME_OVER, WIN
+  const [screen, setScreen] = useState('STUDIO_INTRO'); // STUDIO_INTRO, MENU, INTRO, PLAYING, JUMPSCARE, GAME_OVER, WIN
   const [currentNight, setCurrentNight] = useState(1);
   const [gameState, setGameState] = useState(null);
   const [jumpscareTarget, setJumpscareTarget] = useState(null);
@@ -198,6 +199,10 @@ export default function App() {
 
   return (
     <main className="w-screen h-screen overflow-hidden bg-black select-none">
+      {screen === 'STUDIO_INTRO' && (
+        <StudioIntro onFinish={() => setScreen('MENU')} />
+      )}
+
       {screen === 'MENU' && (
         <MainMenu
           currentNight={currentNight}

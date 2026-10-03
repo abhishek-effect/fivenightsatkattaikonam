@@ -48,6 +48,47 @@ class SoundManager {
     return this.isMuted;
   }
 
+  // --- RETRO STUDIO INTRO JINGLE ---
+  playStudioJingle() {
+    this.initContext();
+    if (!this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Majestic 80s synth chord (C major: C3, G3, C4, E4, G4)
+      const freqs = [130.81, 196.00, 261.63, 329.63, 392.00];
+      
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq * 0.98, now);
+        osc.frequency.exponentialRampToValueAtTime(freq, now + 0.6);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(250, now);
+        filter.frequency.exponentialRampToValueAtTime(3200, now + 1.2);
+        filter.frequency.exponentialRampToValueAtTime(1200, now + 3.8);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.8);
+        gain.gain.setValueAtTime(0.08, now + 2.5);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 4.2);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 4.3);
+      });
+    } catch (e) {
+      console.warn('Studio jingle error:', e);
+    }
+  }
+
   // --- AMBIENT FAN SOUND ---
   startFan() {
     if (this.fanNode) return;
