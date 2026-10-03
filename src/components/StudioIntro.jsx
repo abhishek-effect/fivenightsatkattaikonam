@@ -66,16 +66,16 @@ export default function StudioIntro({ onFinish }) {
 
         {/* Studio Title */}
         <div className="space-y-1">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 drop-shadow-[0_2px_15px_rgba(245,158,11,0.6)] font-mono">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 drop-shadow-[0_2px_15px_rgba(245,158,11,0.6)] font-mono">
             IIT CHANTHAVILA
           </h1>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-[0.25em] text-amber-500/90 uppercase font-mono">
+          <h2 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-[0.2em] sm:tracking-[0.25em] text-amber-500/90 uppercase font-mono">
             COMPUTER ENTERTAINMENT
           </h2>
         </div>
 
         {/* Tagline / Subtitle */}
-        <div className="pt-2 flex items-center justify-center gap-2 text-xs sm:text-sm font-mono tracking-[0.4em] text-neutral-400 uppercase">
+        <div className="pt-2 flex items-center justify-center gap-2 text-[10px] sm:text-sm font-mono tracking-[0.3em] sm:tracking-[0.4em] text-neutral-400 uppercase">
           <span className="w-6 h-[1px] bg-neutral-600" />
           <span>PRESENTS</span>
           <span className="w-6 h-[1px] bg-neutral-600" />
@@ -83,7 +83,7 @@ export default function StudioIntro({ onFinish }) {
       </div>
 
       {/* 5-second Linear Progress Indicator */}
-      <div className="absolute bottom-10 inset-x-12 max-w-md mx-auto z-10 space-y-2">
+      <div className="absolute bottom-6 sm:bottom-10 inset-x-6 sm:inset-x-12 max-w-md mx-auto z-10 space-y-2">
         <div className="w-full h-1 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
           <div 
             className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-75 ease-linear"
@@ -91,12 +91,12 @@ export default function StudioIntro({ onFinish }) {
           />
         </div>
         <div className="flex justify-between items-center text-[10px] text-neutral-500 font-mono uppercase tracking-wider">
-          <span>INITIALIZING EXPERIENCE</span>
+          <span>INITIALIZING</span>
           <button 
             onClick={(e) => { e.stopPropagation(); handleSkip(); }}
             className="text-neutral-400 hover:text-amber-400 transition cursor-pointer"
           >
-            CLICK TO SKIP ▶
+            TAP TO SKIP ▶
           </button>
         </div>
       </div>

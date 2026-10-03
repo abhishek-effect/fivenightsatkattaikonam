@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause } from 'lucide-react';
+import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 
@@ -11,17 +11,57 @@ export default function OfficeView({
   onPause,
   isDoorBanging,
 }) {
-  const [panX, setPanX] = useState(0); // -10 to +10% horizontal panning
+  const [panX, setPanX] = useState(0); // -15 to +15% horizontal panning (or -28 to +28% on mobile)
+  const [isPortrait, setIsPortrait] = useState(false);
   const containerRef = useRef(null);
+  const touchStartXRef = useRef(null);
+  const currentPanRef = useRef(0);
 
-  // Smooth mouse panning effect across office
+  // Detect orientation / screen mode
+  useEffect(() => {
+    const handleResize = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Smooth mouse panning effect across office (Desktop)
   const handleMouseMove = (e) => {
     if (gameState.isMonitorOpen) return;
     const width = window.innerWidth;
     const clientX = e.clientX;
     const ratio = (clientX / width) * 2 - 1; // -1 to 1
-    setPanX(ratio * 10);
+    const maxPan = isPortrait ? 28 : 12;
+    setPanX(ratio * maxPan);
   };
+
+  // Touch Drag Panning (Mobile Chrome / Touchscreen)
+  const handleTouchStart = (e) => {
+    if (gameState.isMonitorOpen || !e.touches[0]) return;
+    touchStartXRef.current = e.touches[0].clientX;
+    currentPanRef.current = panX;
+  };
+
+  const handleTouchMove = (e) => {
+    if (gameState.isMonitorOpen || touchStartXRef.current === null || !e.touches[0]) return;
+    const clientX = e.touches[0].clientX;
+    const diff = clientX - touchStartXRef.current;
+    const maxPan = isPortrait ? 30 : 16;
+    // Dragging left should rotate view right towards the door
+    const newPan = currentPanRef.current - (diff / window.innerWidth) * (maxPan * 2.2);
+    setPanX(Math.max(-maxPan, Math.min(maxPan, newPan)));
+  };
+
+  const handleTouchEnd = () => {
+    touchStartXRef.current = null;
+  };
+
+  // Quick glance buttons for mobile thumbs
+  const lookDesk = () => setPanX(isPortrait ? -26 : -12);
+  const lookCenter = () => setPanX(0);
+  const lookDoor = () => setPanX(isPortrait ? 26 : 12);
 
   const isLightActive = gameState.isLightOn && !gameState.isBlackout;
   const isDoorLocked = gameState.isDoorClosed && !gameState.isBlackout;
@@ -30,7 +70,7 @@ export default function OfficeView({
   const usageBars = typeof gameState?.getUsageBars === 'function' ? gameState.getUsageBars() : getUsageBars(gameState);
   const usageColors = ['bg-emerald-500', 'bg-emerald-500', 'bg-yellow-500', 'bg-orange-500', 'bg-red-600'];
 
-  // Animatronics visibility when light is active (they stand outside door for 5s)
+  // Animatronics visibility when light is active (they stand outside door)
   const showAadeshAtDoor = isLightActive && gameState.aadesh.location === 'BLIND_SPOT' && !isDoorLocked;
   const showABAtDoor = isLightActive && gameState.ab.location === 'DOOR' && !isDoorLocked;
 
@@ -42,7 +82,10 @@ export default function OfficeView({
     <div 
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className={`relative w-screen h-screen overflow-hidden bg-black select-none ${
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className={`relative w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black select-none touch-none ${
         isDoorBanging ? 'door-impact-shake' : ''
       }`}
     >
@@ -59,16 +102,16 @@ export default function OfficeView({
         </div>
       )}
 
-      {/* Panoramic Office Room View - Uses the actual DoorOpen and DoorClosed images */}
+      {/* Panoramic Office Room View - Adaptive width for Desktop & Mobile */}
       <div 
         className="absolute inset-0 transition-transform duration-100 ease-out"
         style={{
-          width: '120vw',
-          left: '-10vw',
+          width: isPortrait ? '230vw' : '120vw',
+          left: isPortrait ? '-65vw' : '-10vw',
           transform: `translateX(${-panX}%)`
         }}
       >
-        {/* Main Office Image (Door area is shrouded in darkness unless Light is turned ON) */}
+        {/* Main Office Image */}
         <img
           src={isDoorLocked ? './assets/images/office-door-closed.jpg' : './assets/images/office-door-open.jpg'}
           alt={isDoorLocked ? 'Door Closed' : 'Door Open'}
@@ -81,7 +124,7 @@ export default function OfficeView({
           }`}
         />
 
-        {/* DOORWAY DARKNESS SHROUD: When hallway Light is OFF, the doorway is pitch black */}
+        {/* DOORWAY DARKNESS SHROUD: When hallway Light is OFF, doorway is pitch black */}
         {!isLightActive && !gameState.isBlackout && (
           <div 
             className="absolute inset-y-0 pointer-events-none transition-opacity duration-200 z-10 flex items-center justify-center"
@@ -101,7 +144,7 @@ export default function OfficeView({
           </div>
         )}
 
-        {/* HALLWAY LIGHT ILLUMINATION BEAM: Casts bright light onto the door/hallway */}
+        {/* HALLWAY LIGHT ILLUMINATION BEAM */}
         {isLightActive && (
           <>
             <div 
@@ -123,7 +166,7 @@ export default function OfficeView({
 
         {/* THREAT EXPOSED BY LIGHT: Aadesh standing at the open doorway */}
         {showAadeshAtDoor && (
-          <div className="absolute top-[22%] left-[54%] w-64 md:w-84 pointer-events-none animate-pulse z-20 transition-all duration-100">
+          <div className="absolute top-[22%] left-[54%] w-60 sm:w-64 md:w-84 pointer-events-none animate-pulse z-20 transition-all duration-100">
             <img 
               src="./assets/images/aadesh-jumpscare-cutout.png" 
               alt="Aadesh at Doorway" 
@@ -134,7 +177,7 @@ export default function OfficeView({
 
         {/* THREAT EXPOSED BY LIGHT: AB standing at the open doorway */}
         {showABAtDoor && (
-          <div className="absolute bottom-[14%] left-[52%] w-72 md:w-96 pointer-events-none animate-pulse z-20 transition-all duration-100">
+          <div className="absolute bottom-[14%] left-[52%] w-64 sm:w-72 md:w-96 pointer-events-none animate-pulse z-20 transition-all duration-100">
             <img 
               src="./assets/images/ab-cutout.png" 
               alt="AB at Open Doorway" 
@@ -146,97 +189,120 @@ export default function OfficeView({
         {/* DOOR KNOCK / BANG IMPACT EFFECT */}
         {isDoorBanging && (
           <div className="absolute top-[28%] left-[56%] z-30 pointer-events-none animate-bounce">
-            <div className="bg-red-600/90 text-white font-mono font-black text-sm px-4 py-2 rounded-lg border-2 border-yellow-300 shadow-[0_0_30px_rgba(220,38,38,1)] flex items-center gap-2">
-              <ShieldAlert size={20} className="text-yellow-300 animate-spin" />
+            <div className="bg-red-600/90 text-white font-mono font-black text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border-2 border-yellow-300 shadow-[0_0_30px_rgba(220,38,38,1)] flex items-center gap-2">
+              <ShieldAlert size={18} className="text-yellow-300 animate-spin" />
               <span>BANG! BANG! BANG!</span>
             </div>
           </div>
         )}
 
-        {/* Classic Spinning Security Desk Fan (Mounted in lower-left on the counter) */}
+        {/* Classic Spinning Security Desk Fan (Mounted in lower-left on counter) */}
         <div className="absolute bottom-10 left-[18%] z-15 pointer-events-none">
-          <div className="relative w-36 h-36 flex items-center justify-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
-            <div className="absolute bottom-2 w-24 h-4 bg-neutral-900 border border-neutral-700 rounded-full" />
-            <div className="absolute bottom-5 w-5 h-16 bg-neutral-800" />
-            <div className="absolute w-28 h-28 rounded-full border-2 border-neutral-600 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
-              <div className={`relative w-24 h-24 ${!gameState.isBlackout ? 'fan-rotating' : ''}`}>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-cyan-600 z-10 shadow-[0_0_8px_#06b6d4]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-12 h-4 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-12 h-4 bg-neutral-300 rounded-full shadow" />
+          <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
+            <div className="absolute bottom-2 w-20 sm:w-24 h-4 bg-neutral-900 border border-neutral-700 rounded-full" />
+            <div className="absolute bottom-5 w-4 sm:w-5 h-14 sm:h-16 bg-neutral-800" />
+            <div className="absolute w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-neutral-600 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+              <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${!gameState.isBlackout ? 'fan-rotating' : ''}`}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-cyan-600 z-10 shadow-[0_0_8px_#06b6d4]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3.5 sm:w-4 h-10 sm:h-12 bg-neutral-300 rounded-full shadow" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3.5 sm:w-4 h-10 sm:h-12 bg-neutral-300 rounded-full shadow" />
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-10 sm:w-12 h-3.5 sm:h-4 bg-neutral-300 rounded-full shadow" />
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-10 sm:w-12 h-3.5 sm:h-4 bg-neutral-300 rounded-full shadow" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Industrial Door & Light Control Wall Panel (Positioned right beside the doorway) */}
-        <div className="absolute top-1/3 right-[14%] z-25 bg-neutral-950/95 border-2 border-neutral-700 rounded-xl p-3.5 shadow-2xl flex flex-col items-center gap-5 backdrop-blur-sm">
-          <div className="text-[11px] font-bold text-gray-400 font-mono tracking-widest border-b border-neutral-800 pb-1 w-full text-center">
-            DOOR CONTROLS
+        {/* Industrial Door & Light Control Wall Panel */}
+        <div className="absolute top-1/3 right-[12%] sm:right-[14%] z-25 bg-neutral-950/95 border-2 border-neutral-700 rounded-xl p-2.5 sm:p-3.5 shadow-2xl flex flex-col items-center gap-3.5 sm:gap-5 backdrop-blur-sm">
+          <div className="text-[10px] sm:text-[11px] font-bold text-gray-400 font-mono tracking-widest border-b border-neutral-800 pb-1 w-full text-center">
+            CONTROLS
           </div>
 
           {/* DOOR LOCK BUTTON */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
             <button
               onClick={onToggleDoor}
               disabled={gameState.isBlackout}
-              className={`w-18 h-18 rounded-full border-4 flex flex-col items-center justify-center font-bold text-xs transition active:scale-95 shadow-xl cursor-pointer ${
+              className={`w-14 h-14 sm:w-18 sm:h-18 rounded-full border-4 flex flex-col items-center justify-center font-bold text-xs transition active:scale-90 shadow-xl cursor-pointer ${
                 isDoorLocked
                   ? 'bg-red-700 border-red-500 text-white shadow-[0_0_25px_rgba(220,38,38,0.9)] animate-pulse'
                   : 'bg-emerald-950 border-emerald-600 text-emerald-300 hover:bg-emerald-900'
               }`}
               title="Toggle Security Door [D]"
             >
-              {isDoorLocked ? <Lock size={22} /> : <Unlock size={22} />}
-              <span className="text-[10px] mt-0.5 tracking-wider font-mono">DOOR</span>
+              {isDoorLocked ? <Lock size={20} /> : <Unlock size={20} />}
+              <span className="text-[9px] sm:text-[10px] mt-0.5 tracking-wider font-mono">DOOR</span>
             </button>
-            <span className={`text-[10px] font-bold font-mono tracking-wider ${isDoorLocked ? 'text-red-400' : 'text-emerald-400'}`}>
-              {isDoorLocked ? '● CLOSED [D]' : '○ OPEN [D]'}
+            <span className={`text-[9px] sm:text-[10px] font-bold font-mono tracking-wider ${isDoorLocked ? 'text-red-400' : 'text-emerald-400'}`}>
+              {isDoorLocked ? '● CLOSED' : '○ OPEN'}
             </span>
           </div>
 
           {/* HALLWAY LIGHT BUTTON */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
             <button
               onClick={onToggleLight}
               disabled={gameState.isBlackout}
-              className={`w-18 h-18 rounded-full border-4 flex flex-col items-center justify-center font-bold text-xs transition active:scale-95 shadow-xl cursor-pointer ${
+              className={`w-14 h-14 sm:w-18 sm:h-18 rounded-full border-4 flex flex-col items-center justify-center font-bold text-xs transition active:scale-90 shadow-xl cursor-pointer ${
                 isLightActive
                   ? 'bg-yellow-400 border-white text-black shadow-[0_0_30px_rgba(250,204,21,1)]'
                   : 'bg-neutral-800 border-neutral-600 text-gray-400 hover:bg-neutral-700 hover:text-white'
               }`}
               title="Toggle Hallway Light [L]"
             >
-              <Lightbulb size={22} className={isLightActive ? 'text-black' : 'text-gray-400'} />
-              <span className="text-[10px] mt-0.5 tracking-wider font-mono">LIGHT</span>
+              <Lightbulb size={20} className={isLightActive ? 'text-black' : 'text-gray-400'} />
+              <span className="text-[9px] sm:text-[10px] mt-0.5 tracking-wider font-mono">LIGHT</span>
             </button>
-            <span className={`text-[10px] font-bold font-mono tracking-wider ${isLightActive ? 'text-yellow-400' : 'text-gray-500'}`}>
-              {isLightActive ? '● ON [L]' : '○ OFF [L]'}
+            <span className={`text-[9px] sm:text-[10px] font-bold font-mono tracking-wider ${isLightActive ? 'text-yellow-400' : 'text-gray-500'}`}>
+              {isLightActive ? '● ON' : '○ OFF'}
             </span>
           </div>
         </div>
       </div>
 
+      {/* MOBILE QUICK-LOOK THUMB GLANCE BUTTONS (Allows immediate snap between desk & door on phones) */}
+      {isPortrait && (
+        <>
+          <button
+            onClick={lookDesk}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 px-2 py-3 bg-black/75 border border-neutral-700 rounded-r-lg text-gray-400 hover:text-white font-mono text-[10px] flex flex-col items-center gap-1 shadow-lg active:scale-95"
+            title="Look at Desk"
+          >
+            <ChevronLeft size={16} />
+            <span className="[writing-mode:vertical-lr]">DESK</span>
+          </button>
+
+          <button
+            onClick={lookDoor}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 px-2 py-3 bg-black/75 border border-neutral-700 rounded-l-lg text-gray-400 hover:text-white font-mono text-[10px] flex flex-col items-center gap-1 shadow-lg active:scale-95"
+            title="Look at Door"
+          >
+            <ChevronRight size={16} />
+            <span className="[writing-mode:vertical-lr]">DOOR</span>
+          </button>
+        </>
+      )}
+
       {/* Top Left: Power Meter */}
-      <div className="absolute top-6 left-6 z-30 bg-black/85 backdrop-blur border border-neutral-800 p-3.5 rounded-lg space-y-1.5 pointer-events-none">
-        <div className="flex items-center gap-2">
-          <Zap size={18} className={gameState.power > 20 ? 'text-emerald-400' : 'text-red-500 animate-pulse'} />
-          <span className="text-xs font-bold tracking-wider text-gray-300 font-mono">POWER:</span>
-          <span className={`text-base font-bold font-mono ${
+      <div className="absolute top-3 sm:top-6 left-3 sm:left-6 z-30 bg-black/85 backdrop-blur border border-neutral-800 p-2 sm:p-3 rounded-lg space-y-1 pointer-events-none">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Zap size={15} className={gameState.power > 20 ? 'text-emerald-400' : 'text-red-500 animate-pulse'} />
+          <span className="text-[10px] sm:text-xs font-bold tracking-wider text-gray-300 font-mono">POWER:</span>
+          <span className={`text-xs sm:text-base font-bold font-mono ${
             gameState.power > 50 ? 'text-emerald-400' : gameState.power > 20 ? 'text-yellow-400' : 'text-red-500'
           }`}>
             {Math.round(gameState.power)}%
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <span className="text-gray-400 text-[10px]">USAGE:</span>
-          <div className="flex gap-1">
+        <div className="flex items-center gap-1.5 text-xs font-mono">
+          <span className="text-gray-400 text-[9px] sm:text-[10px]">USE:</span>
+          <div className="flex gap-0.5 sm:gap-1">
             {[1, 2, 3, 4, 5].map((bar) => (
               <div 
                 key={bar} 
-                className={`w-3 h-3 rounded-sm border border-black/40 ${
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm border border-black/40 ${
                   bar <= usageBars ? usageColors[bar - 1] : 'bg-neutral-800'
                 }`}
               />
@@ -246,41 +312,41 @@ export default function OfficeView({
       </div>
 
       {/* Top Right: Time Clock & Night */}
-      <div className="absolute top-6 right-6 z-30 bg-black/85 backdrop-blur border border-neutral-800 p-3.5 rounded-lg text-right pointer-events-none">
-        <div className="text-2xl font-black font-mono tracking-widest text-white">
+      <div className="absolute top-3 sm:top-6 right-3 sm:right-6 z-30 bg-black/85 backdrop-blur border border-neutral-800 p-2 sm:p-3 rounded-lg text-right pointer-events-none">
+        <div className="text-lg sm:text-2xl font-black font-mono tracking-widest text-white leading-tight">
           {gameState.time === 0 ? '12' : gameState.time} AM
         </div>
-        <div className="text-[11px] text-red-500 font-bold uppercase tracking-widest font-mono">
+        <div className="text-[9px] sm:text-[11px] text-red-500 font-bold uppercase tracking-widest font-mono">
           NIGHT {gameState.night}
         </div>
       </div>
 
       {/* Top Center: Pause Button */}
       {onPause && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+        <div className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
           <button
             onClick={onPause}
             disabled={gameState.isBlackout}
-            className="px-4 py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-300 hover:text-yellow-300 rounded-lg font-mono text-xs tracking-wider flex items-center gap-2 transition-all shadow-[0_2px_15px_rgba(0,0,0,0.8)] cursor-pointer group"
+            className="px-2.5 py-1 sm:px-4 sm:py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-300 hover:text-yellow-300 rounded-lg font-mono text-[10px] sm:text-xs tracking-wider flex items-center gap-1 sm:gap-2 transition-all shadow-lg cursor-pointer active:scale-95"
             title="Pause Shift [ESC]"
           >
-            <Pause size={14} className="text-yellow-400 group-hover:scale-125 transition-transform" />
-            <span>PAUSE [ESC]</span>
+            <Pause size={12} className="text-yellow-400" />
+            <span>PAUSE</span>
           </button>
         </div>
       )}
 
       {/* Bottom Center: CCTV Surveillance Flip Trigger */}
-      <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-2 pointer-events-auto">
+      <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-1.5 sm:pb-2 px-3 pointer-events-auto">
         <button
           onClick={onToggleMonitor}
           disabled={gameState.isBlackout}
-          className="group px-14 py-3 bg-neutral-900/95 hover:bg-neutral-800 border-2 border-neutral-500 hover:border-emerald-400 rounded-t-xl transition-all duration-150 flex items-center gap-3 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] cursor-pointer"
-          title="Press SPACE or Click to Open CCTV Cameras"
+          className="group w-full max-w-xs sm:max-w-md py-2.5 sm:py-3 bg-neutral-900/95 hover:bg-neutral-800 border-2 border-neutral-500 hover:border-emerald-400 rounded-t-xl transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] cursor-pointer active:scale-95"
+          title="Open CCTV Cameras [SPACE]"
         >
-          <div className="w-3 h-3 rounded-full bg-emerald-500 group-hover:animate-ping" />
-          <span className="text-sm font-bold tracking-widest text-gray-100 group-hover:text-emerald-300 uppercase font-mono">
-            ▲ OPEN SURVEILLANCE CAMERAS [SPACE]
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500 group-hover:animate-ping" />
+          <span className="text-xs sm:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-emerald-300 uppercase font-mono">
+            ▲ SURVEILLANCE CAMERAS <span className="hidden sm:inline">[SPACE]</span>
           </span>
         </button>
       </div>
