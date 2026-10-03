@@ -32,21 +32,3 @@ A FNAF-inspired web survival horror game built with **React**, **Vite**, **Tailw
 
 ---
 
-## 🚀 How to Deploy to GitHub Pages
-
-### 1. Create a repository on GitHub
-Create a new repository (e.g. `fnak` or `five-nights-at-kattaikonam`) on [github.com](https://github.com/).
-
-### 2. Connect and push your code
-Run the following commands in this directory:
-```bash
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
-git push -u origin main
-```
-
-### 3. Enable GitHub Pages
-1. Go to your repository on GitHub -> **Settings** -> **Pages**.
-2. Under **Build and deployment** -> **Source**, select **GitHub Actions** (the automated workflow in `.github/workflows/deploy.yml` will handle the build and deployment automatically).
-3. Within 1-2 minutes, your game will be live at:
-   `https://<your-username>.github.io/<your-repo-name>/`
