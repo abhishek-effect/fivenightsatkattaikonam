@@ -32,3 +32,5 @@ A FNAF-inspired web survival horror game built with **React**, **Vite**, **Tailw
 
 ---
 
+With ❤️,
+IIT Chanthavila Computer Entertainment
