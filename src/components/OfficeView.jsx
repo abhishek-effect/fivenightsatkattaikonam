@@ -4,6 +4,8 @@ import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 import DeskFan from './DeskFan';
+import DeskMonitor from './DeskMonitor';
+import OmrUploadModal from './OmrUploadModal';
 
 export default function OfficeView({
   gameState,
@@ -12,7 +14,9 @@ export default function OfficeView({
   onToggleMonitor,
   onPause,
   isDoorBanging,
+  onOmrComplete,
 }) {
+  const [isOmrModalOpen, setIsOmrModalOpen] = useState(false);
   const [panX, setPanX] = useState(0); // -15 to +15% horizontal panning (or -28 to +28% on mobile)
   const [isPortrait, setIsPortrait] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
@@ -242,6 +246,15 @@ export default function OfficeView({
           </div>
         )}
 
+        {/* Office Security Desk Monitor (Mounts on left counter next to fan) */}
+        <div className="absolute bottom-5 sm:bottom-7 md:bottom-9 left-[3.5%] sm:left-[4.5%] md:left-[5.5%] z-18 pointer-events-auto w-36 h-32 sm:w-44 sm:h-38 md:w-52 md:h-44 lg:w-60 lg:h-52">
+          <DeskMonitor
+            gameState={gameState}
+            onOpenModal={() => setIsOmrModalOpen(true)}
+            className="w-full h-full"
+          />
+        </div>
+
         {/* Classic Spinning Security Desk Fan (Mounted in lower-left on counter) */}
         <div className="absolute bottom-6 sm:bottom-8 left-[16%] sm:left-[17%] z-15 pointer-events-none w-32 h-40 sm:w-40 sm:h-48 md:w-48 md:h-56">
           <DeskFan isBlackout={gameState.isBlackout} className="w-full h-full" />
@@ -383,10 +396,12 @@ export default function OfficeView({
       {/* Bottom Center: CCTV Surveillance Flip Trigger */}
       <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-1 sm:pb-2 px-2 sm:px-3 pointer-events-auto">
         <button
-          onClick={onToggleMonitor}
-          disabled={gameState.isBlackout}
-          className="group w-full max-w-[210px] sm:max-w-md py-1.5 sm:py-2.5 bg-neutral-900/95 hover:bg-neutral-800 border sm:border-2 border-neutral-600 hover:border-emerald-400 rounded-t-lg sm:rounded-t-xl transition-all duration-150 flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] cursor-pointer active:scale-95"
-          title="Open CCTV Cameras [SPACE]"
+          onClick={gameState.isOmrUploading ? undefined : onToggleMonitor}
+          disabled={gameState.isBlackout || gameState.isOmrUploading}
+          className={`group w-full max-w-[210px] sm:max-w-md py-1.5 sm:py-2.5 bg-neutral-900/95 hover:bg-neutral-800 border sm:border-2 border-neutral-600 hover:border-emerald-400 rounded-t-lg sm:rounded-t-xl transition-all duration-150 flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] active:scale-95 ${
+            gameState.isOmrUploading ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+          }`}
+          title={gameState.isOmrUploading ? 'Surveillance Locked: Upload in Progress' : 'Open CCTV Cameras [SPACE]'}
         >
           <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-emerald-500 group-hover:animate-ping" />
           <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-emerald-300 uppercase font-mono">
@@ -394,6 +409,14 @@ export default function OfficeView({
           </span>
         </button>
       </div>
+
+      {/* Interactive OMR Upload Terminal Modal */}
+      <OmrUploadModal
+        isOpen={isOmrModalOpen}
+        onClose={() => setIsOmrModalOpen(false)}
+        gameState={gameState}
+        onComplete={onOmrComplete}
+      />
 
       {/* Retro CRT Scanlines & Screen Vignette */}
       <div className="crt-overlay" />

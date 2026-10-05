@@ -356,8 +356,13 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
               <div className="space-y-2.5 sm:space-y-3">
                 <div className="border-l-2 border-red-500 pl-3">
-                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Lead Designer</span>
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Lead Developer</span>
                   <span className="text-red-400 font-bold text-sm">Pinky</span>
+                </div>
+
+                <div className="border-l-2 border-orange-500 pl-3">
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Creative Head</span>
+                  <span className="text-orange-400 font-bold text-sm">Dip-u</span>
                 </div>
 
                 <div className="border-l-2 border-yellow-500 pl-3">

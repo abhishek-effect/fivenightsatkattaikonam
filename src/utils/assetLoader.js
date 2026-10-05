@@ -33,6 +33,11 @@ export const ASSET_MANIFEST = {
     { id: 'ab-jumpscare', src: './assets/images/ab-jumpscare.jpg', label: 'AB Threat Bio-Metrics' },
     { id: 'aadesh-jumpscare', src: './assets/images/aadesh-jumpscare.jpg', label: 'Aadesh Threat Bio-Metrics' },
     { id: 'dipu-jumpscare', src: './assets/images/dipu-jumpscare.png', label: 'Dipu Threat Bio-Metrics' },
+
+    // Office Desk Monitor & OMR Subsystem
+    { id: 'desk-monitor', src: './assets/images/monitor.webp', label: 'Security Terminal Monitor' },
+    { id: 'upload-confirmation', src: './assets/images/upload-confirmation.png', label: 'OMR Ligin Confirmation Prompt' },
+    { id: 'uploading-omr', src: './assets/images/uploading-omr.jpg', label: 'OMR Data Transmission Feed' },
   ],
 
   audio: [
@@ -40,6 +45,7 @@ export const ASSET_MANIFEST = {
     { id: 'knock-sfx', src: './assets/audio/knock-sfx.mp3', label: 'Door Defense Acoustics' },
     { id: 'running-sfx', src: './assets/audio/running-sfx.mp3', label: 'Sprint Footstep Acoustics' },
     { id: 'main-menu-bgm', src: './assets/audio/main-menu-bgm.mp3', label: 'Facility Ambience Feed' },
+    { id: 'upload-success', src: './assets/audio/upload-success.mp3', label: 'OMR Upload Success Chime' },
   ]
 };
 

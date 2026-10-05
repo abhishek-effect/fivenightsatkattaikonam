@@ -173,6 +173,10 @@ export default function App() {
         setScreen('WIN');
         break;
 
+      case 'OMR_UPLOAD_COMPLETE':
+        soundManager.playUploadSuccess();
+        break;
+
       default:
         break;
     }
@@ -227,7 +231,7 @@ export default function App() {
   }, [gameState, refreshGameState, isPaused]);
 
   const handleToggleMonitor = useCallback(() => {
-    if (!gameState || gameState.isBlackout || isPaused) return;
+    if (!gameState || gameState.isBlackout || isPaused || gameState.isOmrUploading) return;
     const newState = !gameState.isMonitorOpen;
     gameState.isMonitorOpen = newState;
     soundManager.playCameraFlip(newState);
@@ -239,6 +243,15 @@ export default function App() {
     gameState.currentCam = camId;
     setGameState(refreshGameState(gameState));
   }, [gameState, refreshGameState, isPaused]);
+
+  // Complete OMR upload callback
+  const handleOmrComplete = useCallback(() => {
+    if (!gameState || gameState.isGameOver) return null;
+    const result = gameState.completeOmrUpload(handleGameEvent);
+    soundManager.playUploadSuccess();
+    setGameState(refreshGameState(gameState));
+    return result;
+  }, [gameState, refreshGameState, handleGameEvent]);
 
   // Keyboard shortcut listener: Space (Monitor), D (Door), L (Light), ESC / P (Pause)
   useEffect(() => {
@@ -252,6 +265,11 @@ export default function App() {
       }
 
       if (isPaused) return; // Don't process other hotkeys when paused
+
+      // User is locked on uploading screen until cancelled or completed
+      if (gameState && gameState.isOmrUploading) {
+        return;
+      }
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -267,7 +285,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [screen, isPaused, handleTogglePause, handleToggleMonitor, handleToggleDoor, handleToggleLight]);
+  }, [screen, isPaused, gameState, handleTogglePause, handleToggleMonitor, handleToggleDoor, handleToggleLight]);
 
   return (
     <main className="w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black select-none">
@@ -302,6 +320,7 @@ export default function App() {
             onToggleMonitor={handleToggleMonitor}
             onPause={handleTogglePause}
             isDoorBanging={isDoorBanging}
+            onOmrComplete={handleOmrComplete}
           />
 
           {gameState.isMonitorOpen && (

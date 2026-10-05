@@ -12,6 +12,7 @@ class SoundManager {
     this.sprintAudio = null;
     this.heartbeatTimer = null;
     this.menuBgm = null;
+    this.uploadSuccessAudio = null;
     this.initAudioAssets();
   }
 
@@ -44,6 +45,9 @@ class SoundManager {
       this.menuBgm = new Audio('./assets/audio/main-menu-bgm.mp3');
       this.menuBgm.preload = 'auto';
       this.menuBgm.loop = true;
+
+      this.uploadSuccessAudio = new Audio('./assets/audio/upload-success.mp3');
+      this.uploadSuccessAudio.preload = 'auto';
     } catch (e) {
       console.warn('Audio assets init error:', e);
     }
@@ -58,6 +62,7 @@ class SoundManager {
     if (this.knockAudio) this.knockAudio.muted = this.isMuted;
     if (this.sprintAudio) this.sprintAudio.muted = this.isMuted;
     if (this.menuBgm) this.menuBgm.muted = this.isMuted;
+    if (this.uploadSuccessAudio) this.uploadSuccessAudio.muted = this.isMuted;
     return this.isMuted;
   }
 
@@ -429,6 +434,44 @@ class SoundManager {
       gain.connect(this.masterGain);
       osc.start(now + delay);
       osc.stop(now + delay + 0.25);
+    });
+  }
+
+  // --- OMR UPLOAD SUCCESS CHIME ---
+  playUploadSuccess() {
+    this.initContext();
+    if (this.isMuted) return;
+
+    if (this.uploadSuccessAudio) {
+      try {
+        this.uploadSuccessAudio.currentTime = 0;
+        this.uploadSuccessAudio.volume = this.isMuted ? 0 : 0.9;
+        const playPromise = this.uploadSuccessAudio.play();
+        if (playPromise) {
+          playPromise.catch(() => this.synthesizeUploadSuccess());
+        }
+      } catch (_) {
+        this.synthesizeUploadSuccess();
+      }
+    } else {
+      this.synthesizeUploadSuccess();
+    }
+  }
+
+  synthesizeUploadSuccess() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+      gain.gain.setValueAtTime(0.3, now + idx * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now + idx * 0.1);
+      osc.stop(now + idx * 0.1 + 0.35);
     });
   }
 

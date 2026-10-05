@@ -65,6 +65,16 @@ export class GameState {
       location: 'CAM_4', // CAM_4 -> CAM_1/CAM_2 -> BLIND_SPOT (outside doorway)
       atBlindSpotTimer: 0,
     };
+
+    // Desk Monitor & OMR Subsystem
+    this.omrUploadCount = 0; // Total uploads completed this shift
+    this.omrUploadsInCycle = 0; // Uploads count towards current hour skip
+    // Quota: Night 1: 2 uploads, Night 2: 3 uploads, Night 3: 3 uploads, Night 4 & 5: 4 uploads
+    this.omrQuota = this.night === 1 ? 2 : (this.night === 2 || this.night === 3 ? 3 : 4);
+    // Cooldown: 45s base on Night 1, +5s per night (50s on Night 2, 55s on Night 3, 60s on Night 4, 65s on Night 5)
+    this.omrMaxCooldown = 45 + (Math.max(1, Math.min(this.night, 5)) - 1) * 5;
+    this.omrCooldown = 0; // Starts ready (0s)
+    this.isOmrUploading = false;
   }
 
   getUsageBars() {
@@ -97,9 +107,55 @@ export class GameState {
     return false;
   }
 
+  // Skip one in-game hour (triggered when OMR quota is met)
+  skipHour(onEvent) {
+    if (this.isGameOver || this.isGameWon) return;
+    this.timeProgress = 0;
+    this.time += 1;
+    if (onEvent) onEvent({ type: 'HOUR_CHANGE', hour: this.time });
+    if (this.time >= 6) {
+      this.isGameWon = true;
+      if (onEvent) onEvent({ type: 'GAME_WIN' });
+    }
+  }
+
+  // Handle completed OMR upload
+  completeOmrUpload(onEvent) {
+    if (this.isGameOver || this.isGameWon) return { hourSkipped: false, newHour: this.time };
+
+    this.omrCooldown = this.omrMaxCooldown;
+    this.omrUploadCount += 1;
+    this.omrUploadsInCycle += 1;
+
+    let hourSkipped = false;
+    if (this.omrUploadsInCycle >= this.omrQuota) {
+      this.omrUploadsInCycle = 0;
+      hourSkipped = true;
+      this.skipHour(onEvent);
+    }
+
+    if (onEvent) {
+      onEvent({
+        type: 'OMR_UPLOAD_COMPLETE',
+        totalUploads: this.omrUploadCount,
+        uploadsInCycle: this.omrUploadsInCycle,
+        quota: this.omrQuota,
+        hourSkipped,
+        hour: this.time,
+      });
+    }
+
+    return { hourSkipped, newHour: this.time };
+  }
+
   // Advance game logic by deltaSeconds
   tick(dt, onEvent) {
     if (this.isGameOver || this.isGameWon) return;
+
+    // --- OMR COOLDOWN DECAY ---
+    if (this.omrCooldown > 0) {
+      this.omrCooldown = Math.max(0, this.omrCooldown - dt);
+    }
 
     // --- TIME PROGRESSION ---
     if (!this.isBlackout) {
