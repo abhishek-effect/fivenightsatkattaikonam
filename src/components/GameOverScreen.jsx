@@ -1,5 +1,6 @@
 import React from 'react';
 import { RotateCcw, Home, Skull } from 'lucide-react';
+import { requestAppFullscreen } from '../utils/fullscreen';
 
 export default function GameOverScreen({ night, jumpscareWho, onRetry, onMainMenu }) {
   const getVictimMessage = (who) => {
@@ -30,7 +31,10 @@ export default function GameOverScreen({ night, jumpscareWho, onRetry, onMainMen
 
         <div className="pt-2 sm:pt-4 space-y-2.5 sm:space-y-3">
           <button
-            onClick={onRetry}
+            onClick={() => {
+              requestAppFullscreen();
+              onRetry();
+            }}
             className="w-full py-3 sm:py-3.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded tracking-widest uppercase text-xs sm:text-sm transition shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center gap-2 cursor-pointer active:scale-98"
           >
             <RotateCcw size={16} />

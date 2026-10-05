@@ -1,13 +1,29 @@
-import React, { useEffect } from 'react';
-import { Play, Home, RotateCcw, Pause, ShieldAlert, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Play, Home, RotateCcw, Pause, ShieldAlert, Zap, Maximize, Minimize } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
+import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
 export default function PauseMenu({ gameState, onResume, onMainMenu, onRestart }) {
+  const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
+
   // ESC or P key to resume
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(isAppFullscreen());
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Escape' || e.code === 'KeyP') {
         e.preventDefault();
+        requestAppFullscreen();
         onResume();
       }
     };
@@ -47,11 +63,23 @@ export default function PauseMenu({ gameState, onResume, onMainMenu, onRestart }
         <div className="space-y-2.5 sm:space-y-3">
           {/* RESUME BUTTON */}
           <button
-            onClick={onResume}
+            onClick={() => {
+              requestAppFullscreen();
+              onResume();
+            }}
             className="w-full py-3 sm:py-3.5 px-4 sm:px-6 bg-emerald-950 hover:bg-emerald-900 border-2 border-emerald-500 hover:border-emerald-400 text-emerald-200 font-mono font-bold tracking-widest text-xs sm:text-sm rounded-lg transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-[1.02] active:scale-98 cursor-pointer"
           >
             <Play size={16} className="text-emerald-400" />
             <span>RESUME SHIFT <span className="hidden sm:inline">[ESC]</span></span>
+          </button>
+
+          {/* TOGGLE FULLSCREEN BUTTON */}
+          <button
+            onClick={toggleAppFullscreen}
+            className="w-full py-2.5 sm:py-3 px-4 sm:px-6 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-200 font-mono text-xs rounded-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+          >
+            {isFullscreen ? <Minimize size={15} className="text-yellow-400" /> : <Maximize size={15} className="text-yellow-400" />}
+            <span>{isFullscreen ? 'EXIT FULLSCREEN' : 'TOGGLE FULLSCREEN'}</span>
           </button>
 
           {/* RESTART NIGHT BUTTON */}

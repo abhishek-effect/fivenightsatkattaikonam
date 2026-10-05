@@ -11,6 +11,7 @@ import GameOverScreen from './components/GameOverScreen';
 import StudioIntro from './components/StudioIntro';
 import PauseMenu from './components/PauseMenu';
 import { preloadAllAssets } from './utils/assetLoader';
+import { requestAppFullscreen } from './utils/fullscreen';
 
 // Early kickoff of asset preloading
 preloadAllAssets().catch(() => {});
@@ -46,6 +47,7 @@ export default function App() {
 
   // Start a new night shift
   const handleStartGame = (night = currentNight, customConfig = null) => {
+    requestAppFullscreen();
     soundManager.stopMenuBgm();
     setIsPaused(false);
     customConfigRef.current = customConfig;
@@ -69,12 +71,14 @@ export default function App() {
 
   // Retry same night
   const handleRetry = () => {
+    requestAppFullscreen();
     setIsPaused(false);
     handleStartGame(currentNight, customConfigRef.current);
   };
 
   // Proceed to next night
   const handleNextNight = () => {
+    requestAppFullscreen();
     setIsPaused(false);
     const next = Math.min(5, currentNight + 1);
     saveNight(next);
@@ -100,6 +104,7 @@ export default function App() {
       if (next) {
         soundManager.pauseGameAudio();
       } else {
+        requestAppFullscreen();
         soundManager.resumeGameAudio();
       }
       return next;
@@ -107,6 +112,7 @@ export default function App() {
   }, [screen, gameState]);
 
   const handleResume = useCallback(() => {
+    requestAppFullscreen();
     setIsPaused(false);
     soundManager.resumeGameAudio();
   }, []);
@@ -264,7 +270,7 @@ export default function App() {
   }, [screen, isPaused, handleTogglePause, handleToggleMonitor, handleToggleDoor, handleToggleLight]);
 
   return (
-    <main className="w-screen h-screen overflow-hidden bg-black select-none">
+    <main className="w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black select-none">
       {screen === 'STUDIO_INTRO' && (
         <StudioIntro onFinish={() => {
           setScreen('MENU');

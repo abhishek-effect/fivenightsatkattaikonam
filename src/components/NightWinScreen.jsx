@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../audio/SoundManager';
 import { Trophy, ChevronRight, Home } from 'lucide-react';
+import { requestAppFullscreen } from '../utils/fullscreen';
 
 export default function NightWinScreen({ night, onNextNight, onMainMenu }) {
   const [displayedTime, setDisplayedTime] = useState('5:59 AM');
@@ -47,7 +48,10 @@ export default function NightWinScreen({ night, onNextNight, onMainMenu }) {
         <div className="pt-2 sm:pt-4 space-y-2.5 sm:space-y-3">
           {night < 5 && (
             <button
-              onClick={onNextNight}
+              onClick={() => {
+                requestAppFullscreen();
+                onNextNight();
+              }}
               className="w-full py-3 sm:py-3.5 bg-green-700 hover:bg-green-600 text-white font-bold rounded tracking-widest uppercase text-xs sm:text-sm transition shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <span>PROCEED TO NIGHT {night + 1}</span>

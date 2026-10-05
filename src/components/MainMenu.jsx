@@ -1,17 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Play, Settings, HelpCircle, Users } from 'lucide-react';
+import { Volume2, VolumeX, Play, Settings, HelpCircle, Users, Maximize, Minimize } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
+import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
 export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
   const [showHowToPlayScare, setShowHowToPlayScare] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
   const [glitchBurst, setGlitchBurst] = useState(false);
   const scareTimeoutRef = useRef(null);
+
+  // Sync fullscreen state
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(isAppFullscreen());
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Play Main Menu BGM on mount and cleanup on unmount
   useEffect(() => {
@@ -46,6 +61,11 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
     };
   }, []);
 
+  const handleToggleFullscreen = (e) => {
+    e.stopPropagation();
+    toggleAppFullscreen();
+  };
+
   const handleToggleMute = (e) => {
     e.stopPropagation();
     const muted = soundManager.toggleMute();
@@ -56,6 +76,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   };
 
   const handleCustomStart = () => {
+    requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(6, {
       abLevel: customAI.ab,
@@ -68,6 +89,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   };
 
   const handleStartShift = (night) => {
+    requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(night);
   };
@@ -147,6 +169,15 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
+            onClick={handleToggleFullscreen}
+            className="p-1.5 sm:p-2.5 rounded bg-black/70 hover:bg-yellow-950/80 border border-gray-700 hover:border-yellow-500 transition text-gray-300 hover:text-white flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm cursor-pointer active:scale-95"
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize size={16} className="text-yellow-400" /> : <Maximize size={16} className="text-yellow-400" />}
+            <span className="hidden sm:inline">{isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN'}</span>
+          </button>
+
+          <button
             onClick={handleToggleMute}
             className="p-1.5 sm:p-2.5 rounded bg-black/70 hover:bg-red-950/80 border border-gray-700 hover:border-red-500 transition text-gray-300 hover:text-white flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm cursor-pointer active:scale-95"
             title="Toggle Mute"
@@ -183,13 +214,13 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
         {/* Menu Actions */}
         <div className="space-y-2 sm:space-y-2.5">
-          {/* CONTINUE BUTTON */}
+          {/* PLAY / CONTINUE BUTTON */}
           <button
             onClick={() => handleStartShift(currentNight)}
             className="w-full py-2.5 sm:py-3 px-4 sm:px-5 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-xs sm:text-sm md:text-base rounded transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group cursor-pointer active:scale-98"
           >
             <Play size={16} className="text-red-400 group-hover:scale-125 transition-transform" />
-            <span>CONTINUE (NIGHT {currentNight})</span>
+            <span>{currentNight === 1 ? 'PLAY (NIGHT 1)' : `CONTINUE (NIGHT ${currentNight})`}</span>
           </button>
 
           {/* NEW GAME BUTTON */}

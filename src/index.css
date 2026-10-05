@@ -26,6 +26,12 @@ html, body, #root {
   -webkit-touch-callout: none;
 }
 
+:fullscreen, :-webkit-full-screen, :-moz-full-screen, :-ms-fullscreen {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #000000 !important;
+}
+
 /* Retro CRT scanlines overlay */
 .crt-overlay {
   position: absolute;
