@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, AlertTriangle, Radio, Shield, MapPin } from 'lucide-react';
+import { Camera, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { CAMERAS } from '../game/gameEngine';
 import { soundManager } from '../audio/SoundManager';
 
@@ -9,6 +9,7 @@ export default function CameraMonitor({
   onToggleMonitor,
 }) {
   const [switchingStatic, setSwitchingStatic] = useState(false);
+  const [isMapMinimized, setIsMapMinimized] = useState(false);
 
   const activeCam = CAMERAS.find(c => c.id === gameState.currentCam) || CAMERAS[0];
 
@@ -32,21 +33,21 @@ export default function CameraMonitor({
         name: 'AADESH',
         photo: './assets/images/aadesh-sideways-cutout.png',
         pose: 'Sneaking by Stairs',
-        posClass: 'bottom-8 left-[30%] w-44 md:w-56'
+        posClass: 'bottom-6 sm:bottom-8 left-[28%] w-36 sm:w-44 md:w-56'
       });
     } else if (gameState.currentCam === 'CAM_2' && gameState.aadesh.location === 'CAM_2') {
       threats.push({
         name: 'AADESH',
         photo: './assets/images/aadesh-frontfacing-cutout.png',
         pose: 'Advancing Down Main Corridor',
-        posClass: 'bottom-10 left-[35%] w-52 md:w-64'
+        posClass: 'bottom-8 sm:bottom-10 left-[32%] w-40 sm:w-52 md:w-64'
       });
     } else if (gameState.currentCam === 'CAM_1' && gameState.aadesh.location === 'CAM_1') {
       threats.push({
         name: 'AADESH',
         photo: './assets/images/aadesh-frontfacing-cutout.png',
         pose: 'Roaming Physics Lab',
-        posClass: 'bottom-12 right-[32%] w-48 md:w-60'
+        posClass: 'bottom-8 sm:bottom-12 right-[28%] w-36 sm:w-48 md:w-60'
       });
     }
 
@@ -57,14 +58,14 @@ export default function CameraMonitor({
           name: 'DIPU',
           photo: './assets/images/dipu-frontfacing-cutout.png',
           pose: 'Resting in Supply Hall',
-          posClass: 'bottom-10 left-[26%] w-48 md:w-60'
+          posClass: 'bottom-8 sm:bottom-10 left-[24%] w-36 sm:w-48 md:w-60'
         });
       } else if (gameState.dipu.stage === 1) {
         threats.push({
           name: 'DIPU',
           photo: './assets/images/dipu-random-cutout.png',
           pose: 'ALERT! Creeping Closer!',
-          posClass: 'bottom-8 left-[30%] w-56 md:w-72'
+          posClass: 'bottom-6 sm:bottom-8 left-[28%] w-44 sm:w-56 md:w-72'
         });
       }
     } else if (gameState.currentCam === 'CAM_2' && gameState.dipu.stage === 2) {
@@ -72,7 +73,7 @@ export default function CameraMonitor({
         name: 'DIPU',
         photo: './assets/images/dipu-jumpscare-cutout.png',
         pose: 'SPRINTING DOWN CORRIDOR!',
-        posClass: 'bottom-10 left-1/2 -translate-x-1/2 w-64 md:w-80'
+        posClass: 'bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 w-48 sm:w-64 md:w-80'
       });
     }
 
@@ -82,21 +83,21 @@ export default function CameraMonitor({
         name: 'AB',
         photo: './assets/images/ab-cutout.png',
         pose: 'Lurking in Physics Lab',
-        posClass: 'bottom-10 right-[25%] w-48 md:w-64'
+        posClass: 'bottom-8 sm:bottom-10 right-[22%] w-36 sm:w-48 md:w-64'
       });
     } else if (gameState.currentCam === 'CAM_2' && gameState.ab.location === 'CAM_2') {
       threats.push({
         name: 'AB',
         photo: './assets/images/ab-random-cutout.png',
         pose: 'Roaming Main Corridor',
-        posClass: 'bottom-12 left-1/2 -translate-x-1/2 w-52 md:w-68'
+        posClass: 'bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 w-40 sm:w-52 md:w-68'
       });
     } else if (gameState.currentCam === 'CAM_4' && gameState.ab.location === 'CAM_4') {
       threats.push({
         name: 'AB',
         photo: './assets/images/ab-cutout.png',
         pose: 'Stalking Central Stairs',
-        posClass: 'bottom-12 right-[28%] w-48 md:w-64'
+        posClass: 'bottom-8 sm:bottom-12 right-[25%] w-36 sm:w-48 md:w-64'
       });
     }
 
@@ -145,10 +146,10 @@ export default function CameraMonitor({
                 alt={threat.name}
                 loading="eager"
                 decoding="sync"
-                className="max-h-60 sm:max-h-72 md:max-h-96 w-auto object-contain filter contrast-125 saturate-125 drop-shadow-[0_0_25px_rgba(255,0,0,0.8)]"
+                className="max-h-44 sm:max-h-72 md:max-h-96 w-auto object-contain filter contrast-125 saturate-125 drop-shadow-[0_0_25px_rgba(255,0,0,0.8)]"
               />
               {/* Surveillance Subject Tag */}
-              <div className="bg-red-700/90 text-white font-mono text-[9px] md:text-xs font-bold px-2 py-0.5 rounded border border-red-400 mt-1 uppercase tracking-wider shadow">
+              <div className="bg-red-700/90 text-white font-mono text-[8px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded border border-red-400 mt-0.5 sm:mt-1 uppercase tracking-wider shadow whitespace-nowrap">
                 ● {threat.name} — {threat.pose}
               </div>
             </div>
@@ -157,9 +158,9 @@ export default function CameraMonitor({
 
         {/* Dipu Missing Alarm on CAM 3 */}
         {gameState.currentCam === 'CAM_3' && gameState.dipu.stage === 2 && (
-          <div className="absolute inset-x-0 top-1/3 z-25 text-center pointer-events-none animate-bounce px-4">
-            <div className="inline-flex items-center gap-2 sm:gap-3 bg-red-950/95 border-2 border-red-500 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-red-400 font-bold text-xs sm:text-base md:text-lg font-mono shadow-[0_0_30px_rgba(239,68,68,0.9)]">
-              <AlertTriangle size={24} className="text-red-500 shrink-0" />
+          <div className="absolute inset-x-0 top-1/4 sm:top-1/3 z-25 text-center pointer-events-none animate-bounce px-2 sm:px-4">
+            <div className="inline-flex items-center gap-1.5 sm:gap-3 bg-red-950/95 border sm:border-2 border-red-500 px-2.5 sm:px-6 py-1.5 sm:py-3 rounded-lg text-red-400 font-bold text-[10px] sm:text-base md:text-lg font-mono shadow-[0_0_30px_rgba(239,68,68,0.9)]">
+              <AlertTriangle size={18} className="text-red-500 shrink-0 sm:w-6 sm:h-6" />
               <span>WARNING: DIPU ESCAPED CAM 3! SPRINT IN PROGRESS!</span>
             </div>
           </div>
@@ -178,163 +179,184 @@ export default function CameraMonitor({
 
         {/* Top Header Bar - Responsive for Mobile & Desktop */}
         <div className="absolute top-2 sm:top-5 inset-x-2 sm:inset-x-6 z-40 flex justify-between items-start pointer-events-none">
-          <div className="flex items-center gap-1.5 sm:gap-3 bg-black/85 backdrop-blur px-2.5 py-1 sm:px-4 sm:py-2 rounded-lg border border-neutral-700 shadow-xl">
-            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-600 animate-ping" />
-            <span className="font-mono text-xs sm:text-base font-bold text-red-500 tracking-wider">● REC</span>
-            <span className="text-gray-200 font-mono text-[10px] sm:text-sm font-semibold truncate max-w-[140px] sm:max-w-none">
+          <div className="flex items-center gap-1.5 sm:gap-3 bg-black/85 backdrop-blur px-2 sm:px-4 py-1 sm:py-2 rounded-lg border border-neutral-700 shadow-xl">
+            <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-red-600 animate-ping" />
+            <span className="font-mono text-[10px] sm:text-base font-bold text-red-500 tracking-wider">● REC</span>
+            <span className="text-gray-200 font-mono text-[9px] sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none">
               {activeCam.id}: {activeCam.name}
             </span>
           </div>
 
-          <div className="bg-black/85 backdrop-blur px-2.5 py-1 sm:px-4 sm:py-2 rounded-lg border border-neutral-700 shadow-xl text-right font-mono">
-            <div className="text-sm sm:text-xl font-bold text-white">
+          <div className="bg-black/85 backdrop-blur px-2 sm:px-4 py-1 sm:py-2 rounded-lg border border-neutral-700 shadow-xl text-right font-mono">
+            <div className="text-xs sm:text-xl font-bold text-white">
               {gameState.time === 0 ? '12' : gameState.time} AM
             </div>
-            <div className="text-[9px] sm:text-xs text-red-400 font-bold">NIGHT {gameState.night}</div>
+            <div className="text-[8px] sm:text-xs text-red-400 font-bold">NIGHT {gameState.night}</div>
           </div>
         </div>
 
-        {/* VISUAL ARCHITECTURAL BLUEPRINT MAP OF CONNECTED PLACES - Responsive for Mobile */}
-        <div className="absolute bottom-16 sm:bottom-20 right-3 sm:right-6 z-40 bg-neutral-950/95 backdrop-blur-md border-2 border-emerald-500/80 p-2 sm:p-3.5 rounded-xl shadow-2xl pointer-events-auto w-[calc(100vw-24px)] max-w-[320px] sm:max-w-[340px]">
-          <div className="text-[10px] sm:text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider mb-1.5 flex items-center justify-between border-b border-emerald-900/60 pb-1">
-            <div className="flex items-center gap-1.5">
-              <Camera size={13} />
-              <span>FACILITY BLUEPRINT</span>
+        {/* VISUAL ARCHITECTURAL BLUEPRINT MAP - Scaled down for Mobile Phones */}
+        <div className="absolute bottom-11 sm:bottom-16 md:bottom-20 right-2 sm:right-6 z-40 bg-neutral-950/95 backdrop-blur-md border border-emerald-500/80 sm:border-2 p-1.5 sm:p-3.5 rounded-lg sm:rounded-xl shadow-2xl pointer-events-auto w-[185px] sm:w-[280px] md:w-[330px]">
+          <div className="text-[9px] sm:text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider mb-1 sm:mb-1.5 flex items-center justify-between border-b border-emerald-900/60 pb-0.5 sm:pb-1">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <Camera size={11} className="sm:w-3.5 sm:h-3.5" />
+              <span>FACILITY MAP</span>
             </div>
-            <span className="text-[9px] sm:text-[10px] text-emerald-500 animate-pulse font-bold">LIVE MAP</span>
+            <div className="flex items-center gap-1">
+              <span className="hidden sm:inline text-[9px] text-emerald-500 animate-pulse font-bold">LIVE</span>
+              <button
+                onClick={() => setIsMapMinimized(prev => !prev)}
+                className="px-1 py-0.5 rounded bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-mono text-[8px] sm:text-[9px] flex items-center gap-0.5 transition active:scale-95 cursor-pointer"
+                title={isMapMinimized ? 'Expand Facility Map' : 'Collapse Facility Map'}
+              >
+                {isMapMinimized ? (
+                  <>
+                    <ChevronUp size={10} />
+                    <span>EXPAND</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={10} />
+                    <span>MIN</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* SVG Map Showing How Places Physically Connect to Each Other */}
-          <div className="relative w-full h-[155px] sm:h-[195px] bg-black/80 rounded-lg border border-emerald-950 p-1 flex items-center justify-center overflow-hidden">
-            <svg viewBox="0 0 320 220" className="w-full h-full">
-              {/* Hallway connection corridors */}
-              <line x1="160" y1="54" x2="160" y2="94" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-              <line x1="160" y1="54" x2="160" y2="94" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+          {/* SVG Map Showing How Places Physically Connect to Each Other (Hidden when Minimized) */}
+          {!isMapMinimized && (
+            <div className="relative w-full h-[95px] sm:h-[155px] md:h-[190px] bg-black/80 rounded border border-emerald-950 p-0.5 sm:p-1 flex items-center justify-center overflow-hidden">
+              <svg viewBox="0 0 320 220" className="w-full h-full">
+                {/* Hallway connection corridors */}
+                <line x1="160" y1="54" x2="160" y2="94" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
+                <line x1="160" y1="54" x2="160" y2="94" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-              <line x1="112" y1="110" x2="88" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-              <line x1="112" y1="110" x2="88" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="112" y1="110" x2="88" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
+                <line x1="112" y1="110" x2="88" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-              <line x1="208" y1="110" x2="232" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-              <line x1="208" y1="110" x2="232" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="208" y1="110" x2="232" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
+                <line x1="208" y1="110" x2="232" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-              <line x1="160" y1="126" x2="160" y2="163" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-              <line x1="160" y1="126" x2="160" y2="163" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                <line x1="160" y1="126" x2="160" y2="163" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
+                <line x1="160" y1="126" x2="160" y2="163" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-              <line x1="160" y1="193" x2="160" y2="210" stroke="#047857" strokeWidth="6" strokeDasharray="2 2" />
+                <line x1="160" y1="193" x2="160" y2="210" stroke="#047857" strokeWidth="6" strokeDasharray="2 2" />
 
-              {/* Interactive Room Nodes */}
-              {mapNodes.map((node) => {
-                const isSelected = node.id === gameState.currentCam;
-                const rx = node.cx - node.w / 2;
-                const ry = node.cy - node.h / 2;
+                {/* Interactive Room Nodes */}
+                {mapNodes.map((node) => {
+                  const isSelected = node.id === gameState.currentCam;
+                  const rx = node.cx - node.w / 2;
+                  const ry = node.cy - node.h / 2;
 
-                return (
-                  <g 
-                    key={node.id} 
-                    onClick={() => handleCameraChange(node.id)}
-                    className="cursor-pointer group"
-                  >
-                    {isSelected && (
+                  return (
+                    <g 
+                      key={node.id} 
+                      onClick={() => handleCameraChange(node.id)}
+                      className="cursor-pointer group"
+                    >
+                      {isSelected && (
+                        <rect
+                          x={rx - 3}
+                          y={ry - 3}
+                          width={node.w + 6}
+                          height={node.h + 6}
+                          rx="6"
+                          fill="none"
+                          stroke="#34d399"
+                          strokeWidth="2"
+                          className="animate-pulse"
+                        />
+                      )}
                       <rect
-                        x={rx - 3}
-                        y={ry - 3}
-                        width={node.w + 6}
-                        height={node.h + 6}
-                        rx="6"
-                        fill="none"
-                        stroke="#34d399"
-                        strokeWidth="2"
-                        className="animate-pulse"
+                        x={rx}
+                        y={ry}
+                        width={node.w}
+                        height={node.h}
+                        rx="4"
+                        fill={isSelected ? '#064e3b' : '#171717'}
+                        stroke={isSelected ? '#10b981' : '#525252'}
+                        strokeWidth={isSelected ? '2' : '1'}
+                        className="transition group-hover:fill-neutral-800"
                       />
-                    )}
-                    <rect
-                      x={rx}
-                      y={ry}
-                      width={node.w}
-                      height={node.h}
-                      rx="4"
-                      fill={isSelected ? '#064e3b' : '#171717'}
-                      stroke={isSelected ? '#10b981' : '#525252'}
-                      strokeWidth={isSelected ? '2' : '1'}
-                      className="transition group-hover:fill-neutral-800"
-                    />
-                    <text
-                      x={node.cx}
-                      y={node.cy - 2}
-                      textAnchor="middle"
-                      fill={isSelected ? '#a7f3d0' : '#e5e5e5'}
-                      fontSize="9"
-                      fontWeight="bold"
-                      fontFamily="monospace"
-                    >
-                      {node.id}
-                    </text>
-                    <text
-                      x={node.cx}
-                      y={node.cy + 9}
-                      textAnchor="middle"
-                      fill={isSelected ? '#6ee7b7' : '#9ca3af'}
-                      fontSize="7.5"
-                      fontFamily="monospace"
-                    >
-                      {node.name}
-                    </text>
-                  </g>
-                );
-              })}
+                      <text
+                        x={node.cx}
+                        y={node.cy - 1}
+                        textAnchor="middle"
+                        fill={isSelected ? '#a7f3d0' : '#e5e5e5'}
+                        fontSize="9.5"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        {node.id.replace('_', ' ')}
+                      </text>
+                      <text
+                        x={node.cx}
+                        y={node.cy + 10}
+                        textAnchor="middle"
+                        fill={isSelected ? '#6ee7b7' : '#9ca3af'}
+                        fontSize="8"
+                        fontFamily="monospace"
+                      >
+                        {node.name}
+                      </text>
+                    </g>
+                  );
+                })}
 
-              {/* You are Here tag */}
-              <g transform="translate(160, 212)">
-                <rect x="-35" y="-7" width="70" height="15" rx="3" fill="#047857" />
-                <text x="0" y="3.5" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold" fontFamily="monospace">
-                  YOU (OFFICE)
-                </text>
-              </g>
-            </svg>
-          </div>
+                {/* You are Here tag */}
+                <g transform="translate(160, 212)">
+                  <rect x="-35" y="-7" width="70" height="15" rx="3" fill="#047857" />
+                  <text x="0" y="3.5" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold" fontFamily="monospace">
+                    YOU (OFFICE)
+                  </text>
+                </g>
+              </svg>
+            </div>
+          )}
 
-          {/* Quick-Switch Mobile Camera Buttons Strip */}
-          <div className="grid grid-cols-5 gap-1 pt-1.5 border-t border-emerald-900/50 mt-1.5">
+          {/* Quick-Switch Camera Buttons Strip */}
+          <div className="grid grid-cols-5 gap-0.5 sm:gap-1 pt-1 sm:pt-1.5 border-t border-emerald-900/50 mt-1 sm:mt-1.5">
             {CAMERAS.map((cam) => {
               const isSelected = cam.id === gameState.currentCam;
               return (
                 <button
                   key={cam.id}
                   onClick={() => handleCameraChange(cam.id)}
-                  className={`py-1 rounded font-mono text-[9px] font-bold transition active:scale-95 cursor-pointer ${
+                  className={`py-0.5 sm:py-1 rounded font-mono text-[7.5px] sm:text-[9px] font-bold transition active:scale-95 cursor-pointer text-center ${
                     isSelected
                       ? 'bg-emerald-600 text-white shadow-[0_0_8px_#10b981]'
                       : 'bg-black/70 text-gray-400 hover:text-white border border-neutral-800'
                   }`}
                 >
-                  {cam.id.replace('_', ' ')}
+                  CAM {cam.id.replace('CAM_', '')}
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-1 text-[8px] sm:text-[9px] font-mono text-gray-400 flex justify-between items-center px-1">
+          <div className="mt-0.5 sm:mt-1 text-[7px] sm:text-[9px] font-mono text-gray-400 flex justify-between items-center px-0.5 sm:px-1">
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping" />
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-400 inline-block animate-ping" />
               <span>ACTIVE: {activeCam.id}</span>
             </span>
             <span className={gameState.power > 20 ? 'text-emerald-400 font-bold' : 'text-red-500 font-bold'}>
-              BATTERY: {Math.round(gameState.power)}%
+              BAT: {Math.round(gameState.power)}%
             </span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar: Big Clickable Close Monitor Trigger - Easy to tap with thumbs */}
-      <div className="relative z-45 flex justify-center pb-2 sm:pb-3 bg-gradient-to-t from-black via-black/90 to-transparent pt-2 px-3 pointer-events-auto">
+      {/* Bottom Bar: Clickable Close Monitor Trigger */}
+      <div className="relative z-45 flex justify-center pb-1 sm:pb-2.5 bg-gradient-to-t from-black via-black/90 to-transparent pt-1 sm:pt-2 px-2 sm:px-3 pointer-events-auto">
         <button
           onClick={onToggleMonitor}
-          className="group w-full max-w-xs sm:max-w-md py-2.5 sm:py-3 bg-neutral-900/95 hover:bg-neutral-800 border-2 border-neutral-500 hover:border-red-500 rounded-t-xl transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-2xl cursor-pointer active:scale-95"
+          className="group w-full max-w-[210px] sm:max-w-md py-1.5 sm:py-2.5 bg-neutral-900/95 hover:bg-neutral-800 border sm:border-2 border-neutral-600 hover:border-red-500 rounded-t-lg sm:rounded-t-xl transition-all duration-150 flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-2xl cursor-pointer active:scale-95"
           title="Close CCTV Monitor [SPACE]"
         >
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-600 group-hover:animate-ping" />
-          <span className="text-xs sm:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-white uppercase font-mono">
-            ▼ CLOSE SURVEILLANCE CAMERAS <span className="hidden sm:inline">[SPACE]</span>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-600 group-hover:animate-ping" />
+          <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-white uppercase font-mono">
+            ▼ CLOSE SURVEILLANCE <span className="hidden sm:inline">[SPACE]</span>
           </span>
         </button>
       </div>

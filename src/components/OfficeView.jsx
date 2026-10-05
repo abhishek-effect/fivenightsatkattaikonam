@@ -388,15 +388,15 @@ export default function OfficeView({
       </div>
 
       {/* Bottom Center: CCTV Surveillance Flip Trigger */}
-      <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-1.5 sm:pb-2 px-3 pointer-events-auto">
+      <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-1 sm:pb-2 px-2 sm:px-3 pointer-events-auto">
         <button
           onClick={onToggleMonitor}
           disabled={gameState.isBlackout}
-          className="group w-full max-w-xs sm:max-w-md py-2.5 sm:py-3 bg-neutral-900/95 hover:bg-neutral-800 border-2 border-neutral-500 hover:border-emerald-400 rounded-t-xl transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] cursor-pointer active:scale-95"
+          className="group w-full max-w-[210px] sm:max-w-md py-1.5 sm:py-2.5 bg-neutral-900/95 hover:bg-neutral-800 border sm:border-2 border-neutral-600 hover:border-emerald-400 rounded-t-lg sm:rounded-t-xl transition-all duration-150 flex items-center justify-center gap-1.5 sm:gap-2.5 shadow-[0_-5px_25px_rgba(0,0,0,0.9)] cursor-pointer active:scale-95"
           title="Open CCTV Cameras [SPACE]"
         >
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500 group-hover:animate-ping" />
-          <span className="text-xs sm:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-emerald-300 uppercase font-mono">
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-emerald-500 group-hover:animate-ping" />
+          <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider sm:tracking-widest text-gray-100 group-hover:text-emerald-300 uppercase font-mono">
             ▲ SURVEILLANCE CAMERAS <span className="hidden sm:inline">[SPACE]</span>
           </span>
         </button>
