@@ -27,17 +27,24 @@ export default function DeskMonitor({
     onOpenModal();
   };
 
+  const isLightOn = gameState.isLightOn && !isBlackout;
+
   return (
     <div
       onClick={handleClick}
       className={`relative select-none cursor-pointer group ${className}`}
       title={isReady ? 'Desk Terminal: Click to Upload OMR' : `Terminal Cooldown: ${cooldown}s remaining`}
     >
-      {/* Outer Monitor Frame (monitor.webp) */}
+      {/* Realistic Contact Shadow on Counter Surface */}
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-[72%] h-2.5 bg-black/85 blur-[2.5px] rounded-full pointer-events-none" />
+
+      {/* Outer Monitor Frame (monitor.webp) with dynamic room lighting */}
       <img
         src="./assets/images/monitor.webp"
         alt="Security Desk Monitor"
-        className="w-full h-full object-contain filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] pointer-events-none transition-transform duration-200 group-hover:scale-[1.02]"
+        className={`w-full h-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] pointer-events-none transition-all duration-200 group-hover:scale-[1.02] ${
+          !isLightOn && !isBlackout ? 'brightness-[0.72] contrast-110' : ''
+        } ${isBlackout ? 'brightness-[0.08]' : ''}`}
       />
 
       {/* Screen Area (Positioned precisely within the monitor bezel) */}

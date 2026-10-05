@@ -246,8 +246,8 @@ export default function OfficeView({
           </div>
         )}
 
-        {/* Office Security Desk Monitor (Mounts on left counter next to fan) */}
-        <div className="absolute bottom-5 sm:bottom-7 md:bottom-9 left-[3.5%] sm:left-[4.5%] md:left-[5.5%] z-18 pointer-events-auto w-36 h-32 sm:w-44 sm:h-38 md:w-52 md:h-44 lg:w-60 lg:h-52">
+        {/* Office Security Desk Monitor (Placed on counter surface directly beside the water dispenser) */}
+        <div className="absolute bottom-[46%] sm:bottom-[47%] md:bottom-[47.5%] left-[8%] sm:left-[9%] md:left-[10%] z-18 pointer-events-auto w-32 h-28 sm:w-38 sm:h-33 md:w-46 md:h-40 lg:w-52 lg:h-45">
           <DeskMonitor
             gameState={gameState}
             onOpenModal={() => setIsOmrModalOpen(true)}
