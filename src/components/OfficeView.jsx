@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronRight, Maximize, Minimize } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
+import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
 export default function OfficeView({
   gameState,
@@ -13,9 +14,28 @@ export default function OfficeView({
 }) {
   const [panX, setPanX] = useState(0); // -15 to +15% horizontal panning (or -28 to +28% on mobile)
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
   const containerRef = useRef(null);
   const touchStartXRef = useRef(null);
   const currentPanRef = useRef(0);
+
+  // Sync fullscreen state
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(isAppFullscreen());
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = (e) => {
+    e.stopPropagation();
+    toggleAppFullscreen();
+  };
 
   // Detect orientation / screen mode
   useEffect(() => {
@@ -342,20 +362,30 @@ export default function OfficeView({
         </div>
       </div>
 
-      {/* Top Center: Pause Button */}
-      {onPause && (
-        <div className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+      {/* Top Center: Pause & Fullscreen Buttons */}
+      <div className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+        {onPause && (
           <button
             onClick={onPause}
             disabled={gameState.isBlackout}
-            className="px-2.5 py-1 sm:px-4 sm:py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-300 hover:text-yellow-300 rounded-lg font-mono text-[10px] sm:text-xs tracking-wider flex items-center gap-1 sm:gap-2 transition-all shadow-lg cursor-pointer active:scale-95"
+            className="px-2.5 py-1 sm:px-3.5 sm:py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-yellow-400 text-gray-300 hover:text-yellow-300 rounded-lg font-mono text-[10px] sm:text-xs tracking-wider flex items-center gap-1 sm:gap-2 transition-all shadow-lg cursor-pointer active:scale-95"
             title="Pause Shift [ESC]"
           >
             <Pause size={12} className="text-yellow-400" />
             <span>PAUSE</span>
           </button>
-        </div>
-      )}
+        )}
+
+        <button
+          onClick={handleToggleFullscreen}
+          disabled={gameState.isBlackout}
+          className="px-2 py-1 sm:px-3 sm:py-2 bg-black/85 hover:bg-neutral-800 border border-yellow-600/70 hover:border-yellow-400 text-yellow-400 hover:text-yellow-300 rounded-lg font-mono text-[10px] sm:text-xs tracking-wider flex items-center gap-1 sm:gap-1.5 transition-all shadow-lg cursor-pointer active:scale-95"
+          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (Mobile/PC)'}
+        >
+          {isFullscreen ? <Minimize size={12} className="text-yellow-400" /> : <Maximize size={12} className="text-yellow-400" />}
+          <span>{isFullscreen ? 'EXIT' : 'FULL'}</span>
+        </button>
+      </div>
 
       {/* Bottom Center: CCTV Surveillance Flip Trigger */}
       <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-1.5 sm:pb-2 px-3 pointer-events-auto">

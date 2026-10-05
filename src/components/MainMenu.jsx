@@ -170,11 +170,11 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={handleToggleFullscreen}
-            className="p-1.5 sm:p-2.5 rounded bg-black/70 hover:bg-yellow-950/80 border border-gray-700 hover:border-yellow-500 transition text-gray-300 hover:text-white flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm cursor-pointer active:scale-95"
+            className="p-1.5 sm:p-2.5 rounded bg-black/70 hover:bg-yellow-950/80 border border-yellow-600/60 hover:border-yellow-400 transition text-gray-300 hover:text-white flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
           >
             {isFullscreen ? <Minimize size={16} className="text-yellow-400" /> : <Maximize size={16} className="text-yellow-400" />}
-            <span className="hidden sm:inline">{isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN'}</span>
+            <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-300">{isFullscreen ? 'WINDOWED' : 'FULLSCREEN'}</span>
           </button>
 
           <button

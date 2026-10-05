@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { soundManager } from '../audio/SoundManager';
 import { Film, CheckCircle2, Loader2 } from 'lucide-react';
 import { preloadAllAssets } from '../utils/assetLoader';
+import { requestAppFullscreen } from '../utils/fullscreen';
 
 export default function StudioIntro({ onFinish }) {
   const [progress, setProgress] = useState(0);
@@ -67,6 +68,7 @@ export default function StudioIntro({ onFinish }) {
   }, [onFinish]);
 
   const handleSkip = () => {
+    requestAppFullscreen();
     skipRequestedRef.current = true;
     if (isLoaded) {
       finishIntro();
