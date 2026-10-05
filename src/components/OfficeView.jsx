@@ -127,49 +127,66 @@ export default function OfficeView({
           transform: `translateX(${-panX}%)`
         }}
       >
-        {/* Main Office Image: Door Open Layer */}
+        {/* Layer 1: Lights OFF, Door OPEN */}
         <img
-          src="./assets/images/office-door-open.jpg"
-          alt="Office Door Open"
+          src="./assets/images/lights-off-door-open.jpg"
+          alt="Office Lights Off Door Open"
           loading="eager"
           decoding="sync"
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-100 ${
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-75 ${
             gameState.isBlackout
               ? 'brightness-[0.04] contrast-200'
-              : isLightActive
-                ? 'brightness-120 contrast-110 saturate-110'
-                : 'brightness-[0.58] contrast-125'
-          } ${isDoorLocked ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+              : ''
+          } ${!isDoorLocked && !isLightActive ? 'opacity-100 z-1' : 'opacity-0 pointer-events-none z-0'}`}
         />
 
-        {/* Main Office Image: Door Closed Layer */}
+        {/* Layer 2: Lights OFF, Door CLOSED */}
         <img
-          src="./assets/images/office-door-closed.jpg"
-          alt="Office Door Closed"
+          src="./assets/images/lights-off-door-closed.jpg"
+          alt="Office Lights Off Door Closed"
           loading="eager"
           decoding="sync"
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-100 ${
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-75 ${
             gameState.isBlackout
               ? 'brightness-[0.04] contrast-200'
-              : isLightActive
-                ? 'brightness-120 contrast-110 saturate-110'
-                : 'brightness-[0.58] contrast-125'
-          } ${isDoorLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+              : ''
+          } ${isDoorLocked && !isLightActive ? 'opacity-100 z-1' : 'opacity-0 pointer-events-none z-0'}`}
         />
 
-        {/* PRECISE DOORWAY & WINDOW DARKNESS MASKS (Only corridor area outside is pitch black, door frame stays visible) */}
-        {!isLightActive && !gameState.isBlackout && (
+        {/* Layer 3: Lights ON, Door OPEN */}
+        <img
+          src="./assets/images/lights-on-door-open.jpg"
+          alt="Office Lights On Door Open"
+          loading="eager"
+          decoding="sync"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-75 ${
+            gameState.isBlackout
+              ? 'brightness-[0.04] contrast-200'
+              : ''
+          } ${!isDoorLocked && isLightActive ? 'opacity-100 z-1' : 'opacity-0 pointer-events-none z-0'}`}
+        />
+
+        {/* Layer 4: Lights ON, Door CLOSED */}
+        <img
+          src="./assets/images/lights-on-door-closed.jpg"
+          alt="Office Lights On Door Closed"
+          loading="eager"
+          decoding="sync"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-75 ${
+            gameState.isBlackout
+              ? 'brightness-[0.04] contrast-200'
+              : ''
+          } ${isDoorLocked && isLightActive ? 'opacity-100 z-1' : 'opacity-0 pointer-events-none z-0'}`}
+        />
+
+        {/* RED EYES: Only appear when light is off, door is closed, and animatronic is banging on the door */}
+        {isDoorBanging && !isLightActive && isDoorLocked && (
           <svg
-            className="absolute inset-0 w-full h-full pointer-events-none z-10"
+            className="absolute inset-0 w-full h-full pointer-events-none z-20"
             viewBox="0 0 640 480"
             preserveAspectRatio="xMidYMid slice"
           >
             <defs>
-              {/* Subtle edge softening filter so the pitch black merges cleanly into the door frame */}
-              <filter id="corridor-darkness-blur" x="-5%" y="-5%" width="110%" height="110%">
-                <feGaussianBlur stdDeviation="1.2" />
-              </filter>
-              {/* Menacing glowing red eyes filter */}
               <filter id="red-eye-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feMerge>
@@ -178,58 +195,14 @@ export default function OfficeView({
                 </feMerge>
               </filter>
             </defs>
-
-            {/* When Door is OPEN: Only the corridor opening outside is pitch black. Door frame and swung door stay visible! */}
-            {!isDoorLocked && (
-              <polygon
-                points="323,72 435,76 418,340 305,340"
-                fill="#000000"
-                filter="url(#corridor-darkness-blur)"
-              />
-            )}
-
-            {/* When Door is CLOSED: Only the upper window showing the corridor is pitch black. Door frame and lower panel stay visible! */}
-            {isDoorLocked && (
-              <g>
-                <polygon
-                  points="337,114 440,116 444,268 331,267"
-                  fill="#000000"
-                  filter="url(#corridor-darkness-blur)"
-                />
-
-                {/* RED EYES: Only appear when light is off, door is closed, and animatronic is banging on the door */}
-                {isDoorBanging && (
-                  <g className="animate-pulse" filter="url(#red-eye-glow)">
-                    {/* Glowing Red Eyes peering into office through the dark top window */}
-                    <ellipse cx="376" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
-                    <circle cx="376" cy="182" r="2" fill="#ffffff" opacity="0.85" />
-                    <ellipse cx="402" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
-                    <circle cx="402" cy="182" r="2" fill="#ffffff" opacity="0.85" />
-                  </g>
-                )}
-              </g>
-            )}
+            <g className="animate-pulse" filter="url(#red-eye-glow)">
+              {/* Glowing Red Eyes peering into office through the dark top window */}
+              <ellipse cx="376" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
+              <circle cx="376" cy="182" r="2" fill="#ffffff" opacity="0.85" />
+              <ellipse cx="402" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
+              <circle cx="402" cy="182" r="2" fill="#ffffff" opacity="0.85" />
+            </g>
           </svg>
-        )}
-
-        {/* HALLWAY LIGHT ILLUMINATION BEAM */}
-        {isLightActive && (
-          <>
-            <div 
-              className="absolute inset-y-0 pointer-events-none mix-blend-screen transition-opacity duration-150 z-10"
-              style={{
-                left: '44%',
-                width: '42%',
-                background: 'radial-gradient(ellipse 85% 90% at 50% 45%, rgba(255, 252, 230, 0.85) 0%, rgba(255, 240, 180, 0.5) 45%, rgba(255, 215, 120, 0.2) 75%, transparent 100%)'
-              }}
-            />
-            <div className="absolute inset-0 pointer-events-none bg-amber-400/5 mix-blend-color-dodge z-10" />
-          </>
-        )}
-
-        {/* Ambient Dark Security Room Tint when light is OFF */}
-        {!isLightActive && !gameState.isBlackout && (
-          <div className="absolute inset-0 bg-blue-950/25 pointer-events-none mix-blend-multiply z-5" />
         )}
 
         {/* THREAT EXPOSED BY LIGHT: Aadesh standing at the open doorway */}

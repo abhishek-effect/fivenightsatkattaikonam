@@ -7,9 +7,11 @@ export const ASSET_MANIFEST = {
     { id: 'main-menu', src: './assets/images/main-menu.jpg', label: 'Main Menu CRT Interface' },
     { id: 'how-to-play', src: './assets/images/how-to-play.jpg', label: 'Security Protocol Manual' },
 
-    // Office Views
-    { id: 'office-open', src: './assets/images/office-door-open.jpg', label: 'Security Office (Door Open)' },
-    { id: 'office-closed', src: './assets/images/office-door-closed.jpg', label: 'Security Office (Door Closed)' },
+    // Office Views (Lights On/Off and Door Open/Closed)
+    { id: 'lights-off-door-open', src: './assets/images/lights-off-door-open.jpg', label: 'Security Office (Lights Off, Door Open)' },
+    { id: 'lights-off-door-closed', src: './assets/images/lights-off-door-closed.jpg', label: 'Security Office (Lights Off, Door Closed)' },
+    { id: 'lights-on-door-open', src: './assets/images/lights-on-door-open.jpg', label: 'Security Office (Lights On, Door Open)' },
+    { id: 'lights-on-door-closed', src: './assets/images/lights-on-door-closed.jpg', label: 'Security Office (Lights On, Door Closed)' },
 
     // CCTV Feeds
     { id: 'cam-room-a', src: './assets/images/cam-room-a.jpg', label: 'CAM 1: Physics Laboratory' },
