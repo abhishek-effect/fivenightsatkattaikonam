@@ -94,10 +94,6 @@ export default function OfficeView({
   const showAadeshAtDoor = isLightActive && gameState.aadesh.location === 'BLIND_SPOT' && !isDoorLocked;
   const showABAtDoor = isLightActive && gameState.ab.location === 'DOOR' && !isDoorLocked;
 
-  // Lurking threat indicator in the pitch dark doorway
-  const threatInDarkness = !isLightActive && !gameState.isBlackout && !isDoorLocked && 
-    (gameState.ab.location === 'DOOR' || gameState.aadesh.location === 'BLIND_SPOT');
-
   return (
     <div 
       ref={containerRef}
@@ -161,24 +157,59 @@ export default function OfficeView({
           } ${isDoorLocked ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         />
 
-        {/* DOORWAY DARKNESS SHROUD: When hallway Light is OFF, doorway is pitch black */}
+        {/* PRECISE DOORWAY & WINDOW DARKNESS MASKS (Only corridor area outside is pitch black, door frame stays visible) */}
         {!isLightActive && !gameState.isBlackout && (
-          <div 
-            className="absolute inset-y-0 pointer-events-none transition-opacity duration-200 z-10 flex items-center justify-center"
-            style={{
-              left: '46%',
-              width: '38%',
-              background: 'radial-gradient(ellipse 95% 90% at 50% 50%, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.96) 65%, rgba(0,0,0,0.6) 88%, transparent 100%)'
-            }}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-10"
+            viewBox="0 0 640 480"
+            preserveAspectRatio="xMidYMid slice"
           >
-            {/* Subtle red eye reflection when an animatronic stands lurking in the dark doorway */}
-            {threatInDarkness && (
-              <div className="absolute top-[38%] left-[45%] flex gap-5 items-center pointer-events-none animate-pulse">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_12px_#dc2626] opacity-80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_12px_#dc2626] opacity-80" />
-              </div>
+            <defs>
+              {/* Subtle edge softening filter so the pitch black merges cleanly into the door frame */}
+              <filter id="corridor-darkness-blur" x="-5%" y="-5%" width="110%" height="110%">
+                <feGaussianBlur stdDeviation="1.2" />
+              </filter>
+              {/* Menacing glowing red eyes filter */}
+              <filter id="red-eye-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* When Door is OPEN: Only the corridor opening outside is pitch black. Door frame and swung door stay visible! */}
+            {!isDoorLocked && (
+              <polygon
+                points="323,72 435,76 418,340 305,340"
+                fill="#000000"
+                filter="url(#corridor-darkness-blur)"
+              />
             )}
-          </div>
+
+            {/* When Door is CLOSED: Only the upper window showing the corridor is pitch black. Door frame and lower panel stay visible! */}
+            {isDoorLocked && (
+              <g>
+                <polygon
+                  points="337,114 440,116 444,268 331,267"
+                  fill="#000000"
+                  filter="url(#corridor-darkness-blur)"
+                />
+
+                {/* RED EYES: Only appear when light is off, door is closed, and animatronic is banging on the door */}
+                {isDoorBanging && (
+                  <g className="animate-pulse" filter="url(#red-eye-glow)">
+                    {/* Glowing Red Eyes peering into office through the dark top window */}
+                    <ellipse cx="376" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
+                    <circle cx="376" cy="182" r="2" fill="#ffffff" opacity="0.85" />
+                    <ellipse cx="402" cy="182" rx="4.5" ry="4" fill="#ff1a1a" />
+                    <circle cx="402" cy="182" r="2" fill="#ffffff" opacity="0.85" />
+                  </g>
+                )}
+              </g>
+            )}
+          </svg>
         )}
 
         {/* HALLWAY LIGHT ILLUMINATION BEAM */}
@@ -227,9 +258,9 @@ export default function OfficeView({
           </div>
         )}
 
-        {/* DOOR KNOCK / BANG IMPACT EFFECT */}
+        {/* DOOR KNOCK / BANG IMPACT EFFECT: Positioned on the lower door panel to never collide with the red eyes in the top window */}
         {isDoorBanging && (
-          <div className="absolute top-[28%] left-[56%] z-30 pointer-events-none animate-bounce">
+          <div className="absolute top-[64%] left-[60.5%] -translate-x-1/2 z-30 pointer-events-none animate-bounce">
             <div className="bg-red-600/90 text-white font-mono font-black text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border-2 border-yellow-300 shadow-[0_0_30px_rgba(220,38,38,1)] flex items-center gap-2">
               <ShieldAlert size={18} className="text-yellow-300 animate-spin" />
               <span>BANG! BANG! BANG!</span>

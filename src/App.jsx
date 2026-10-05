@@ -141,7 +141,7 @@ export default function App() {
         soundManager.stopHeartbeat();
         soundManager.playDoorKnock();
         setIsDoorBanging(true);
-        setTimeout(() => setIsDoorBanging(false), 900);
+        setTimeout(() => setIsDoorBanging(false), 1200);
         break;
 
       case 'AADESH_AT_BLIND_SPOT':
