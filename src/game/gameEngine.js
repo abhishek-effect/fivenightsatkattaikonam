@@ -9,11 +9,11 @@ export const CAMERAS = [
 ];
 
 export const NIGHT_PRESETS = {
-  1: { hourSeconds: 50, abLevel: 3, dipuLevel: 1, aadeshLevel: 2, doorWaitTime: 5.0, label: 'Night 1 - The Orientation' },
-  2: { hourSeconds: 50, abLevel: 6, dipuLevel: 4, aadeshLevel: 5, doorWaitTime: 4.0, label: 'Night 2 - Disturbances' },
-  3: { hourSeconds: 55, abLevel: 10, dipuLevel: 8, aadeshLevel: 9, doorWaitTime: 3.0, label: 'Night 3 - Escalation' },
-  4: { hourSeconds: 60, abLevel: 14, dipuLevel: 12, aadeshLevel: 13, doorWaitTime: 2.0, label: 'Night 4 - Lockdown' },
-  5: { hourSeconds: 60, abLevel: 18, dipuLevel: 17, aadeshLevel: 18, doorWaitTime: 1.0, label: 'Night 5 - Final Shift' },
+  1: { hourSeconds: 400 / 6, abLevel: 3, dipuLevel: 1, aadeshLevel: 2, doorWaitTime: 5.0, label: 'Night 1 - The Orientation' },
+  2: { hourSeconds: 400 / 6, abLevel: 6, dipuLevel: 4, aadeshLevel: 5, doorWaitTime: 4.0, label: 'Night 2 - Disturbances' },
+  3: { hourSeconds: 400 / 6, abLevel: 10, dipuLevel: 8, aadeshLevel: 9, doorWaitTime: 3.0, label: 'Night 3 - Escalation' },
+  4: { hourSeconds: 400 / 6, abLevel: 14, dipuLevel: 12, aadeshLevel: 13, doorWaitTime: 2.0, label: 'Night 4 - Lockdown' },
+  5: { hourSeconds: 400 / 6, abLevel: 18, dipuLevel: 17, aadeshLevel: 18, doorWaitTime: 1.0, label: 'Night 5 - Final Shift' },
 };
 
 // Standalone helper function for usage bars calculation
@@ -30,7 +30,7 @@ export class GameState {
   constructor(night = 1, customConfig = null) {
     const config = customConfig || NIGHT_PRESETS[night] || NIGHT_PRESETS[1];
     this.night = night;
-    this.hourSeconds = config.hourSeconds || 50;
+    this.hourSeconds = config.hourSeconds || (400 / 6);
     this.abLevel = config.abLevel ?? 4;
     this.dipuLevel = config.dipuLevel ?? 3;
     this.aadeshLevel = config.aadeshLevel ?? 4;
@@ -177,10 +177,10 @@ export class GameState {
       // OMR uploading does not drain power
       if (!this.isOmrUploading) {
         const usage = this.getUsageBars();
-        // Base time to deplete 100% power on Night 1 is exactly 300 seconds at base usage (1 bar).
-        // Each night after Night 1, power depletes 1.5% faster (1-2% increase).
+        // Base idle battery life on Night 1 is exactly 500 seconds at base usage (1 bar).
+        // Each night after Night 1, power depletes 1.5% faster (decreases like 1.5 etc just as before).
         const nightDrainMultiplier = 1 + (Math.max(1, this.night) - 1) * 0.015;
-        const baseDrainRate = (100 / 300) * nightDrainMultiplier; // 0.3333% / sec on Night 1
+        const baseDrainRate = (100 / 500) * nightDrainMultiplier; // 0.2000% / sec on Night 1
         const drainPerSec = baseDrainRate * (1 + (usage - 1) * 0.65);
         this.power = Math.max(0, this.power - drainPerSec * dt);
 

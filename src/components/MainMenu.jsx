@@ -83,7 +83,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
       dipuLevel: customAI.dipu,
       aadeshLevel: customAI.aadesh,
       doorWaitTime: 1.0,
-      hourSeconds: 50,
+      hourSeconds: 400 / 6,
       label: 'Night 6 - Custom Night'
     });
   };
