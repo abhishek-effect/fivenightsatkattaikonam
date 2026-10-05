@@ -3,6 +3,7 @@ import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronR
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
+import DeskFan from './DeskFan';
 
 export default function OfficeView({
   gameState,
@@ -242,20 +243,8 @@ export default function OfficeView({
         )}
 
         {/* Classic Spinning Security Desk Fan (Mounted in lower-left on counter) */}
-        <div className="absolute bottom-10 left-[18%] z-15 pointer-events-none">
-          <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
-            <div className="absolute bottom-2 w-20 sm:w-24 h-4 bg-neutral-900 border border-neutral-700 rounded-full" />
-            <div className="absolute bottom-5 w-4 sm:w-5 h-14 sm:h-16 bg-neutral-800" />
-            <div className="absolute w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-neutral-600 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
-              <div className={`relative w-20 h-20 sm:w-24 sm:h-24 ${!gameState.isBlackout ? 'fan-rotating' : ''}`}>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-cyan-600 z-10 shadow-[0_0_8px_#06b6d4]" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3.5 sm:w-4 h-10 sm:h-12 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3.5 sm:w-4 h-10 sm:h-12 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-10 sm:w-12 h-3.5 sm:h-4 bg-neutral-300 rounded-full shadow" />
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-10 sm:w-12 h-3.5 sm:h-4 bg-neutral-300 rounded-full shadow" />
-              </div>
-            </div>
-          </div>
+        <div className="absolute bottom-6 sm:bottom-8 left-[16%] sm:left-[17%] z-15 pointer-events-none w-32 h-40 sm:w-40 sm:h-48 md:w-48 md:h-56">
+          <DeskFan isBlackout={gameState.isBlackout} className="w-full h-full" />
         </div>
 
         {/* Industrial Door & Light Control Wall Panel */}
