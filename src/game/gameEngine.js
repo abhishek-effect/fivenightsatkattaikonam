@@ -69,10 +69,10 @@ export class GameState {
     // Desk Monitor & OMR Subsystem
     this.omrUploadCount = 0; // Total uploads completed this shift
     this.omrUploadsInCycle = 0; // Uploads count towards current hour skip
-    // Quota: Night 1: 2 uploads, Night 2: 3 uploads, Night 3: 3 uploads, Night 4 & 5: 4 uploads
-    this.omrQuota = this.night === 1 ? 2 : (this.night === 2 || this.night === 3 ? 3 : 4);
-    // Cooldown: 45s base on Night 1, +5s per night (50s on Night 2, 55s on Night 3, 60s on Night 4, 65s on Night 5)
-    this.omrMaxCooldown = 45 + (Math.max(1, Math.min(this.night, 5)) - 1) * 5;
+    // Quota: Night 1 & 2: 2 uploads, Night 3: 3 uploads, Night 4 & 5: 4 uploads
+    this.omrQuota = (this.night === 1 || this.night === 2) ? 2 : (this.night === 3 ? 3 : 4);
+    // Cooldown: 15 seconds before next upload is possible
+    this.omrMaxCooldown = 15;
     this.omrCooldown = 0; // Starts ready (0s)
     this.isOmrUploading = false;
   }
@@ -174,18 +174,24 @@ export class GameState {
 
     // --- POWER DRAIN ---
     if (!this.isBlackout) {
-      const usage = this.getUsageBars();
-      // Drain rate based on usage
-      const drainPerSec = 0.08 + (usage - 1) * 0.16;
-      this.power = Math.max(0, this.power - drainPerSec * dt);
+      // OMR uploading does not drain power
+      if (!this.isOmrUploading) {
+        const usage = this.getUsageBars();
+        // Base time to deplete 100% power on Night 1 is exactly 300 seconds at base usage (1 bar).
+        // Each night after Night 1, power depletes 1.5% faster (1-2% increase).
+        const nightDrainMultiplier = 1 + (Math.max(1, this.night) - 1) * 0.015;
+        const baseDrainRate = (100 / 300) * nightDrainMultiplier; // 0.3333% / sec on Night 1
+        const drainPerSec = baseDrainRate * (1 + (usage - 1) * 0.65);
+        this.power = Math.max(0, this.power - drainPerSec * dt);
 
-      if (this.power <= 0) {
-        this.isBlackout = true;
-        this.isDoorClosed = false;
-        this.isLightOn = false;
-        this.isMonitorOpen = false;
-        onEvent({ type: 'BLACKOUT_START' });
-        return;
+        if (this.power <= 0) {
+          this.isBlackout = true;
+          this.isDoorClosed = false;
+          this.isLightOn = false;
+          this.isMonitorOpen = false;
+          onEvent({ type: 'BLACKOUT_START' });
+          return;
+        }
       }
     }
 
