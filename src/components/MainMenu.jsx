@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Play, Settings, HelpCircle, Users, Maximize, Minimize } from 'lucide-react';
+import { Volume2, VolumeX, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
@@ -8,12 +8,11 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
-  const [showHowToPlayScare, setShowHowToPlayScare] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
   const [glitchBurst, setGlitchBurst] = useState(false);
-  const scareTimeoutRef = useRef(null);
 
   // Sync fullscreen state
   useEffect(() => {
@@ -94,30 +93,18 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
     onStartGame(night);
   };
 
-  // Troll Jumpscare trigger when clicking "HOW TO PLAY"
-  const triggerHowToPlayScare = () => {
-    soundManager.stopMenuBgm();
-    soundManager.playJumpscare();
-    setShowHowToPlayScare(true);
-
-    if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
-    scareTimeoutRef.current = setTimeout(() => {
-      setShowHowToPlayScare(false);
-      soundManager.playMenuBgm();
-    }, 2200);
+  // Open / Close "How to Play" screen
+  const openHowToPlay = () => {
+    setShowHowToPlay(true);
   };
 
-  const dismissHowToPlayScare = () => {
-    if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
-    setShowHowToPlayScare(false);
-    soundManager.playMenuBgm();
+  const closeHowToPlay = () => {
+    setShowHowToPlay(false);
   };
 
   // Ensure music plays if browser blocked initial autoplay until click
   const handleInteraction = () => {
-    if (!showHowToPlayScare) {
-      soundManager.playMenuBgm();
-    }
+    soundManager.playMenuBgm();
   };
 
   return (
@@ -265,10 +252,10 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
           {/* HOW TO PLAY BUTTON */}
           <button
-            onClick={(e) => { e.stopPropagation(); triggerHowToPlayScare(); }}
-            className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-700 hover:border-red-500 text-gray-300 hover:text-red-400 font-mono text-[11px] sm:text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
+            onClick={(e) => { e.stopPropagation(); openHowToPlay(); }}
+            className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-neutral-950 hover:bg-neutral-900 border border-neutral-700 hover:border-emerald-500 text-gray-300 hover:text-emerald-400 font-mono text-[11px] sm:text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer group active:scale-98"
           >
-            <HelpCircle size={13} className="text-gray-400 group-hover:text-red-400 group-hover:scale-110 transition" />
+            <HelpCircle size={13} className="text-gray-400 group-hover:text-emerald-400 group-hover:scale-110 transition" />
             <span>HOW TO PLAY</span>
           </button>
 
@@ -300,30 +287,198 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         </div>
       </div>
 
-      {/* HOW TO PLAY JUMPSCARE POPUP (Shows How-to-play.jpg with screams and then disappears) */}
-      {showHowToPlayScare && (
+      {/* HOW TO PLAY PROTOCOL MANUAL MODAL */}
+      {showHowToPlay && (
         <div 
-          onClick={(e) => { e.stopPropagation(); dismissHowToPlayScare(); }}
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden cursor-pointer select-none"
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 select-none animate-fadeIn"
         >
-          {/* Intense red flash & vignette */}
-          <div className="absolute inset-0 bg-red-600/35 mix-blend-color-dodge pointer-events-none animate-pulse" />
+          <div className="bg-neutral-950 border-2 border-emerald-500/80 rounded-xl max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden text-gray-200 shadow-[0_0_50px_rgba(16,185,129,0.3)] font-mono">
+            {/* Header */}
+            <div className="flex justify-between items-center bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-b border-neutral-800 px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <h3 className="text-sm sm:text-base font-bold text-emerald-400 flex items-center gap-2 tracking-wider">
+                  <BookOpen size={17} />
+                  SECURITY PROTOCOL MANUAL // HOW TO PLAY
+                </h3>
+              </div>
+              <button 
+                onClick={closeHowToPlay}
+                className="text-gray-400 hover:text-white hover:bg-neutral-800 rounded p-1 transition cursor-pointer font-bold text-sm"
+                title="Close Manual"
+              >
+                ✕
+              </button>
+            </div>
 
-          {/* Jumpscare Image: How-to-play.jpg */}
-          <div className="relative w-full h-full flex items-center justify-center shake-intense">
-            <img 
-              src="./assets/images/how-to-play.jpg" 
-              alt="How to Play" 
-              loading="eager"
-              decoding="sync"
-              className="max-h-[95vh] max-w-[95vw] object-contain filter contrast-125 brightness-115 drop-shadow-[0_0_60px_rgba(255,0,0,0.95)] jumpscare-anim"
-            />
+            {/* Content: 2-Column Responsive Body */}
+            <div className="flex-1 overflow-y-auto flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-neutral-800">
+              {/* LEFT COLUMN: Clear, Detailed Guide */}
+              <div className="flex-1 p-4 sm:p-5 space-y-4 sm:space-y-5 overflow-y-auto text-xs leading-relaxed">
+                
+                {/* Section 1: Objective */}
+                <div className="space-y-1.5 border-l-2 border-emerald-500 pl-3">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold uppercase tracking-wider text-xs">
+                    <ShieldAlert size={14} />
+                    <span>Shift Objective</span>
+                  </div>
+                  <p className="text-gray-300">
+                    Survive from <strong className="text-white">12:00 AM to 6:00 AM</strong> (400 seconds total shift). Keep the facility power above 0%. If power runs out completely, a total blackout occurs and you will be defenseless against the animatronics!
+                  </p>
+                </div>
+
+                {/* Section 2: Office Controls */}
+                <div className="space-y-2 border-l-2 border-cyan-500 pl-3">
+                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold uppercase tracking-wider text-xs">
+                    <Zap size={14} />
+                    <span>Office Defense Controls</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-red-400 font-bold">
+                        <Lock size={12} />
+                        <span>DOOR LOCK [D]</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Locks the blast door to block animatronics standing outside. Consumes power while closed!
+                      </p>
+                    </div>
+
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-yellow-400 font-bold">
+                        <Lightbulb size={12} />
+                        <span>HALLWAY LIGHT [L]</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Lights up the dark doorway outside. Reveals threats lurking in the shadow or blind spot!
+                      </p>
+                    </div>
+
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <Camera size={12} />
+                        <span>SURVEILLANCE [SPACE]</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Opens CCTV monitor to track CAM 1 (Physics Lab), CAM 2 & 3 (Corridors), and CAM 4 (Stairs).
+                      </p>
+                    </div>
+
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                        <Maximize size={12} />
+                        <span>PANNING & QUICK GLANCE</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Move mouse (PC) or touch drag / tap DESK & DOOR buttons (mobile) to look around the office.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: The Three Threats */}
+                <div className="space-y-2 border-l-2 border-red-500 pl-3">
+                  <div className="flex items-center gap-1.5 text-red-400 font-bold uppercase tracking-wider text-xs">
+                    <AlertTriangle size={14} />
+                    <span>The Three Animatronics</span>
+                  </div>
+                  <div className="space-y-1.5 text-[11px] text-gray-300">
+                    <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
+                      <strong className="text-red-400">AB (Abhishek):</strong> Moves through CAM 1 → CAM 2 → CAM 4 → Office Door. When footsteps approach, check with Light [L]. If he stands in the doorway, shut the door [D] immediately until he bangs on the door and retreats!
+                    </p>
+                    <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
+                      <strong className="text-yellow-400">Aadesh:</strong> Sneaks through the central staircase into your doorway blind spot. Turn on the Light [L] to check. If his face appears in the doorway light, close the door [D]!
+                    </p>
+                    <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
+                      <strong className="text-orange-400">Dipu (The Sprinter):</strong> Lurks in CAM 3 (Supply Corridor). Watch CAM 3 regularly to stall him! If left unwatched, he sprints down the hall (hear fast sprinting SFX!). Close the door [D] before he collides with the doorway!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Section 4: Desk Monitor & OMR Uploads */}
+                <div className="space-y-1.5 border-l-2 border-purple-500 pl-3">
+                  <div className="flex items-center gap-1.5 text-purple-400 font-bold uppercase tracking-wider text-xs">
+                    <Upload size={14} />
+                    <span>Desk Monitor // OMR Upload System</span>
+                  </div>
+                  <p className="text-gray-300">
+                    Located on the office desk counter near the water dispenser. Click or tap the monitor to upload OMR sheets to Ligin:
+                  </p>
+                  <ul className="list-disc list-inside text-[11px] text-gray-400 space-y-0.5">
+                    <li><strong className="text-purple-300">Hour Skips:</strong> Night 1 & 2 require 2 uploads per hour skip; Night 3 requires 3 uploads; Night 4 & 5 require 4 uploads.</li>
+                    <li><strong className="text-emerald-400">0% Power Drain:</strong> Uploading OMR does NOT consume any power!</li>
+                    <li><strong className="text-yellow-400">Cooldown:</strong> 15-second cooldown between uploads.</li>
+                    <li><strong className="text-red-400">Upload Lock:</strong> You cannot leave the upload screen without clicking &quot;CANCEL UPLOAD&quot;, which resets progress to 0%.</li>
+                  </ul>
+                </div>
+
+                {/* Section 5: Power Management */}
+                <div className="space-y-1.5 border-l-2 border-yellow-500 pl-3">
+                  <div className="flex items-center gap-1.5 text-yellow-400 font-bold uppercase tracking-wider text-xs">
+                    <Zap size={14} />
+                    <span>Battery & Power Conservation</span>
+                  </div>
+                  <p className="text-[11px] text-gray-300">
+                    You start with 100% battery. Idle battery lasts <strong>500 seconds on Night 1</strong> (depletes ~1.5% faster on subsequent nights). Every active door, light, or camera adds extra power usage bars. Conserve power to avoid a fatal blackout!
+                  </p>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: how-to-play.png */}
+              <div className="w-full md:w-72 lg:w-80 flex-shrink-0 bg-neutral-900/60 p-4 sm:p-5 flex flex-col items-center justify-between space-y-3">
+                <div className="w-full text-center space-y-1">
+                  <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase bg-emerald-950/80 border border-emerald-500/50 px-2 py-0.5 rounded">
+                    SECURITY THREAT ADVISORY
+                  </span>
+                  <h4 className="text-sm font-black text-white tracking-wide">
+                    SUBJECT: AB (ABHISHEK)
+                  </h4>
+                </div>
+
+                {/* The Image: how-to-play.png */}
+                <div className="relative w-full max-w-[240px] md:max-w-none rounded-xl overflow-hidden border-2 border-neutral-700 bg-neutral-950 shadow-[0_0_30px_rgba(0,0,0,0.9)] flex items-center justify-center p-2">
+                  <img 
+                    src="./assets/images/how-to-play.png" 
+                    alt="Subject AB - How to Play Alert" 
+                    loading="eager"
+                    className="w-full max-h-64 sm:max-h-72 md:max-h-80 object-contain filter contrast-110 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                  />
+                  {/* CRT Scanline Overlay */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%)] bg-[length:100%_4px] pointer-events-none opacity-60" />
+                </div>
+
+                {/* Warning Card */}
+                <div className="w-full bg-red-950/40 border border-red-500/60 rounded-lg p-2.5 text-center space-y-1">
+                  <p className="text-[11px] font-bold text-red-400 leading-tight">
+                    WATCH OUT FOR THIS FACE!
+                  </p>
+                  <p className="text-[10px] text-gray-300 leading-tight">
+                    If this appears in your doorway with the light on, do not wait — <strong className="text-yellow-300">SHUT THE DOOR [D]</strong> immediately!
+                  </p>
+                </div>
+
+                <div className="w-full text-center">
+                  <span className="text-[9px] text-gray-500 font-mono">
+                    IDENTIFICATION LOG: IIT CHANTHAVILA #001
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-2.5 bg-neutral-950 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-400">
+              <span className="text-emerald-400/90 text-center sm:text-left text-[10px] sm:text-[11px]">
+                Tip: Wear headphones to listen for hallway footsteps and Dipu sprinting!
+              </span>
+              <button
+                onClick={closeHowToPlay}
+                className="w-full sm:w-auto px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded transition active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+              >
+                UNDERSTOOD
+              </button>
+            </div>
           </div>
-
-          {/* Retro CRT scanlines and noise */}
-          <div className="crt-overlay" />
-          <div className="crt-vignette" />
-          <div className="absolute inset-0 static-fuzz opacity-40 pointer-events-none" />
         </div>
       )}
 

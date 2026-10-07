@@ -5,7 +5,7 @@ export const ASSET_MANIFEST = {
   images: [
     // Core UI & Menu
     { id: 'main-menu', src: './assets/images/main-menu.jpg', label: 'Main Menu CRT Interface' },
-    { id: 'how-to-play', src: './assets/images/how-to-play.jpg', label: 'Security Protocol Manual' },
+    { id: 'how-to-play', src: './assets/images/how-to-play.png', label: 'Security Protocol Manual' },
 
     // Office Views (Lights On/Off and Door Open/Closed)
     { id: 'lights-off-door-open', src: './assets/images/lights-off-door-open.jpg', label: 'Security Office (Lights Off, Door Open)' },
