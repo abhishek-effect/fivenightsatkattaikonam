@@ -4,7 +4,7 @@ import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
-export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
+export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
@@ -74,6 +74,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   };
 
   const handleCustomStart = () => {
+    if (unlockedNight < 6) return;
     requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(6, {
@@ -87,6 +88,7 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
   };
 
   const handleStartShift = (night) => {
+    if (night > unlockedNight && night <= 5) return;
     requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(night);
@@ -202,16 +204,19 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
         <div className="space-y-2 sm:space-y-2.5">
           {/* PLAY / CONTINUE BUTTON */}
           <button
-            onClick={() => handleStartShift(currentNight)}
+            onClick={() => handleStartShift(Math.min(currentNight, Math.min(5, unlockedNight)))}
             className="w-full py-2.5 sm:py-3 px-4 sm:px-5 bg-red-900/40 hover:bg-red-700/60 border-2 border-red-600 hover:border-red-400 text-white font-bold tracking-widest text-xs sm:text-sm md:text-base rounded transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] group cursor-pointer active:scale-98"
           >
             <Play size={16} className="text-red-400 group-hover:scale-125 transition-transform" />
-            <span>{currentNight === 1 ? 'PLAY (NIGHT 1)' : `CONTINUE (NIGHT ${currentNight})`}</span>
+            <span>{currentNight === 1 && unlockedNight === 1 ? 'PLAY (NIGHT 1)' : `CONTINUE (NIGHT ${currentNight})`}</span>
           </button>
 
           {/* NEW GAME BUTTON */}
           <button
-            onClick={() => handleStartShift(1)}
+            onClick={() => {
+              onSelectNight(1);
+              handleStartShift(1);
+            }}
             className="w-full py-2 sm:py-2.5 px-4 sm:px-5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-gray-300 text-gray-200 font-semibold tracking-wider text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
           >
             <span>NEW GAME (NIGHT 1)</span>
@@ -219,35 +224,85 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
 
           {/* NIGHT SELECTOR GRID */}
           <div className="pt-0.5 sm:pt-1">
-            <div className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-mono">SELECT NIGHT:</div>
-            <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
-              {[1, 2, 3, 4, 5].map(n => (
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest font-mono">
+                SELECT NIGHT:
+              </span>
+              {unlockedNight > 1 && onResetProgress && (
                 <button
-                  key={n}
-                  onClick={() => {
-                    onSelectNight(n);
-                    handleStartShift(n);
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Reset shift progress back to Night 1? All unlocked nights will be re-locked.')) {
+                      onResetProgress();
+                    }
                   }}
-                  className={`py-1 sm:py-1.5 text-xs font-bold rounded border transition cursor-pointer font-mono active:scale-95 ${
-                    n === currentNight
-                      ? 'bg-red-600/35 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
-                      : 'bg-black/60 border-neutral-800 hover:border-neutral-500 text-gray-400 hover:text-white'
-                  }`}
+                  className="text-[9px] text-red-500/80 hover:text-red-400 font-mono underline hover:no-underline cursor-pointer transition"
+                  title="Reset all progress back to Night 1"
                 >
-                  {n}
+                  RESET DATA
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+              {[1, 2, 3, 4, 5].map(n => {
+                const isLocked = n > unlockedNight;
+                const isSelected = n === currentNight;
+
+                if (isLocked) {
+                  return (
+                    <button
+                      key={n}
+                      disabled
+                      title={`Locked: Complete Night ${n - 1} to unlock`}
+                      className="py-1 sm:py-1.5 text-xs font-bold rounded border font-mono bg-neutral-950/60 border-neutral-900 text-neutral-600 cursor-not-allowed opacity-50 flex items-center justify-center gap-0.5 select-none"
+                    >
+                      <Lock size={10} className="text-neutral-600" />
+                      <span>{n}</span>
+                    </button>
+                  );
+                }
+
+                return (
+                  <button
+                    key={n}
+                    onClick={() => {
+                      onSelectNight(n);
+                      handleStartShift(n);
+                    }}
+                    title={`Start Night ${n}`}
+                    className={`py-1 sm:py-1.5 text-xs font-bold rounded border transition cursor-pointer font-mono active:scale-95 ${
+                      isSelected
+                        ? 'bg-red-600/35 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.5)]'
+                        : 'bg-black/60 border-neutral-800 hover:border-neutral-500 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* CUSTOM NIGHT BUTTON */}
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowCustomNight(true); }}
-            className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-neutral-950 hover:bg-neutral-900 border border-yellow-600/50 hover:border-yellow-400 text-yellow-400 font-mono text-[11px] sm:text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-          >
-            <Settings size={13} />
-            <span>CUSTOM NIGHT (AI CONFIG)</span>
-          </button>
+          {unlockedNight < 6 ? (
+            <button
+              disabled
+              title="Locked: Complete Night 5 to unlock Custom Night"
+              className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-neutral-950/60 border border-neutral-800/80 text-neutral-500 font-mono text-[11px] sm:text-xs rounded flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+            >
+              <Lock size={13} className="text-neutral-500" />
+              <span>CUSTOM NIGHT (BEAT NIGHT 5 TO UNLOCK)</span>
+            </button>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowCustomNight(true); }}
+              className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-neutral-950 hover:bg-neutral-900 border border-yellow-600/50 hover:border-yellow-400 text-yellow-400 font-mono text-[11px] sm:text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-[0_0_10px_rgba(234,179,8,0.15)]"
+            >
+              <Settings size={13} />
+              <span>CUSTOM NIGHT (AI CONFIG)</span>
+            </button>
+          )}
 
           {/* HOW TO PLAY BUTTON */}
           <button

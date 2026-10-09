@@ -12,37 +12,50 @@ import StudioIntro from './components/StudioIntro';
 import PauseMenu from './components/PauseMenu';
 import { preloadAllAssets } from './utils/assetLoader';
 import { requestAppFullscreen } from './utils/fullscreen';
+import {
+  getUnlockedNight,
+  getSelectedNight,
+  setSelectedNight,
+  unlockNextNight,
+  resetGameProgress
+} from './utils/storage';
 
 // Early kickoff of asset preloading
 preloadAllAssets().catch(() => {});
 
 export default function App() {
   const [screen, setScreen] = useState('STUDIO_INTRO'); // STUDIO_INTRO, MENU, INTRO, PLAYING, JUMPSCARE, GAME_OVER, WIN
-  const [currentNight, setCurrentNight] = useState(1);
+  const [unlockedNight, setUnlockedNight] = useState(() => getUnlockedNight());
+  const [currentNight, setCurrentNight] = useState(() => getSelectedNight());
   const [gameState, setGameState] = useState(null);
   const [jumpscareTarget, setJumpscareTarget] = useState(null);
   const [isDoorBanging, setIsDoorBanging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const customConfigRef = useRef(null);
 
-  // Load highest saved night from localStorage
+  // Keep references updated for stable callbacks
+  const currentNightRef = useRef(currentNight);
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('fnak_night');
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        if (parsed >= 1 && parsed <= 5) {
-          setCurrentNight(parsed);
-        }
-      }
-    } catch (_) {}
-  }, []);
+    currentNightRef.current = currentNight;
+  }, [currentNight]);
 
-  const saveNight = (night) => {
+  const gameStateRef = useRef(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Handle explicit night selection from player
+  const handleSelectNight = (night) => {
+    if (night > unlockedNight) return;
     setCurrentNight(night);
-    try {
-      localStorage.setItem('fnak_night', night.toString());
-    } catch (_) {}
+    setSelectedNight(night);
+  };
+
+  // Reset progress back to Night 1
+  const handleResetProgress = () => {
+    resetGameProgress();
+    setUnlockedNight(1);
+    setCurrentNight(1);
   };
 
   // Start a new night shift
@@ -52,6 +65,9 @@ export default function App() {
     setIsPaused(false);
     customConfigRef.current = customConfig;
     setCurrentNight(night);
+    if (!customConfig && night <= 5) {
+      setSelectedNight(night);
+    }
     const newGame = new GameState(night, customConfig);
     setGameState(newGame);
     setScreen('INTRO');
@@ -81,7 +97,8 @@ export default function App() {
     requestAppFullscreen();
     setIsPaused(false);
     const next = Math.min(5, currentNight + 1);
-    saveNight(next);
+    setCurrentNight(next);
+    setSelectedNight(next);
     handleStartGame(next);
   };
 
@@ -170,6 +187,21 @@ export default function App() {
         soundManager.stopHeartbeat();
         soundManager.stopSprintRunning();
         soundManager.stopBlackoutMusic();
+
+        // Unlock next night immediately upon beating shift
+        {
+          const wonNight = gameStateRef.current?.night ?? currentNightRef.current;
+          const nextUnlocked = unlockNextNight(wonNight);
+          setUnlockedNight(nextUnlocked);
+
+          // Advance selected night if within standard shift range
+          if (wonNight < 5) {
+            const nextNight = wonNight + 1;
+            setCurrentNight(nextNight);
+            setSelectedNight(nextNight);
+          }
+        }
+
         setScreen('WIN');
         break;
 
@@ -299,8 +331,10 @@ export default function App() {
       {screen === 'MENU' && (
         <MainMenu
           currentNight={currentNight}
+          unlockedNight={unlockedNight}
           onStartGame={handleStartGame}
-          onSelectNight={saveNight}
+          onSelectNight={handleSelectNight}
+          onResetProgress={handleResetProgress}
         />
       )}
 
