@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
@@ -32,7 +32,6 @@ export default function MainMenu({ onStartGame, currentNight, onSelectNight }) {
     soundManager.playMenuBgm();
     return () => {
       soundManager.stopMenuBgm();
-      if (scareTimeoutRef.current) clearTimeout(scareTimeoutRef.current);
     };
   }, []);
 
