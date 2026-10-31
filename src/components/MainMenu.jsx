@@ -4,13 +4,13 @@ import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
-export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress }) {
+export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress, onStartTutorial }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
-  const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10 });
+  const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10, johann: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
   const [glitchBurst, setGlitchBurst] = useState(false);
 
@@ -81,6 +81,7 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
       abLevel: customAI.ab,
       dipuLevel: customAI.dipu,
       aadeshLevel: customAI.aadesh,
+      johannLevel: customAI.johann,
       doorWaitTime: 1.0,
       hourSeconds: 400 / 6,
       label: 'Night 6 - Custom Night'
@@ -357,6 +358,18 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                   SECURITY PROTOCOL MANUAL // HOW TO PLAY
                 </h3>
               </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    closeHowToPlay();
+                    if (onStartTutorial) onStartTutorial();
+                  }}
+                  className="px-2.5 sm:px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-[10px] sm:text-xs font-bold tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition active:scale-95 cursor-pointer"
+                >
+                  <Play size={12} className="fill-white" />
+                  <span>PLAY TUTORIAL GAMEPLAY</span>
+                </button>
+              </div>
               <button 
                 onClick={closeHowToPlay}
                 className="text-gray-400 hover:text-white hover:bg-neutral-800 rounded p-1 transition cursor-pointer font-bold text-sm"
@@ -405,7 +418,27 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                         <span>HALLWAY LIGHT [L]</span>
                       </div>
                       <p className="text-gray-400">
-                        Lights up the dark doorway outside. Reveals threats lurking in the shadow or blind spot!
+                        Illuminates the blind spot outside. Required AFTER closing the door to repel Aadesh!
+                      </p>
+                    </div>
+
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-yellow-300 font-bold">
+                        <span className="text-sm">🎭</span>
+                        <span>SECURITY MASK [M]</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Equips wearable mask disguise. Fools Johann when he peers through the door window!
+                      </p>
+                    </div>
+
+                    <div className="bg-neutral-900/90 border border-neutral-800 p-2 rounded space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-red-400 font-bold">
+                        <Volume2 size={12} />
+                        <span>SCARE AUDIO [A]</span>
+                      </div>
+                      <p className="text-gray-400">
+                        Plays teacher voice lines to scare Abhishek away to another room. 10s cooldown countdown!
                       </p>
                     </div>
 
@@ -415,7 +448,7 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                         <span>SURVEILLANCE [SPACE]</span>
                       </div>
                       <p className="text-gray-400">
-                        Opens CCTV monitor to track CAM 1 (Physics Lab), CAM 2 & 3 (Corridors), and CAM 4 (Stairs).
+                        Opens CCTV: CAM 1 (Lab), CAM 2 & 5 (Corridors), CAM 3 (Supply), CAM 4 (Stairs), CAM 6 (Balcony).
                       </p>
                     </div>
 
@@ -425,27 +458,30 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                         <span>PANNING & QUICK GLANCE</span>
                       </div>
                       <p className="text-gray-400">
-                        Move mouse (PC) or touch drag / tap DESK & DOOR buttons (mobile) to look around the office.
+                        Move mouse (PC) or touch drag / tap DESK & DOOR buttons (mobile) to look around office.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Section 3: The Three Threats */}
+                {/* Section 3: The Four Animatronics */}
                 <div className="space-y-2 border-l-2 border-red-500 pl-3">
                   <div className="flex items-center gap-1.5 text-red-400 font-bold uppercase tracking-wider text-xs">
                     <AlertTriangle size={14} />
-                    <span>The Three Animatronics</span>
+                    <span>The Four Animatronic Threats</span>
                   </div>
                   <div className="space-y-1.5 text-[11px] text-gray-300">
                     <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
-                      <strong className="text-red-400">AB (Abhishek):</strong> Moves through CAM 1 → CAM 2 → CAM 4 → Office Door. When footsteps approach, check with Light [L]. If he stands in the doorway, shut the door [D] immediately until he bangs on the door and retreats!
+                      <strong className="text-red-400">AB (Abhishek) [DOOR-BREAKER]:</strong> Breaks in and kills you even if the door is closed! Closing the door will NOT save you. When he approaches nearby, play Scare Audio [A] in his room to frighten him away to an adjacent room. (10s countdown cooldown).
                     </p>
                     <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
-                      <strong className="text-yellow-400">Aadesh:</strong> Sneaks through the central staircase into your doorway blind spot. Turn on the Light [L] to check. If his face appears in the doorway light, close the door [D]!
+                      <strong className="text-purple-400">Johann [WINDOW LURKER]:</strong> Appears peering through the closed door window! After 2 seconds he bangs on the door, and after 5 seconds he breaks in and kills you. Put on your Mask [M] to fool him and make him walk away!
                     </p>
                     <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
-                      <strong className="text-orange-400">Dipu (The Sprinter):</strong> Lurks in CAM 3 (Supply Corridor). Watch CAM 3 regularly to stall him! If left unwatched, he sprints down the hall (hear fast sprinting SFX!). Close the door [D] before he collides with the doorway!
+                      <strong className="text-yellow-400">Aadesh [BLIND SPOT]:</strong> Sneaks through stairs into your blind spot. He only goes away if you turn on the hallway light [L] AFTER closing the blast door [D]!
+                    </p>
+                    <p className="bg-neutral-900/80 p-2 rounded border border-neutral-800">
+                      <strong className="text-orange-400">Dipu [THE SPRINTER]:</strong> Lurks in CAM 3 (Supply Hall). Watch CAM 3 to stall him. If he begins sprinting down the corridor, slam the door [D] immediately before impact!
                     </p>
                   </div>
                 </div>
@@ -580,6 +616,7 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                     <p>Devkrishna</p>
                     <p>Aadesh</p>
                     <p>Abhishek</p>
+                    <p>Johann</p>
                   </div>
                 </div>
 
@@ -628,6 +665,7 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
             <div className="space-y-4">
               {[
                 { name: 'AB', key: 'ab', color: 'text-red-400' },
+                { name: 'JOHANN', key: 'johann', color: 'text-purple-400' },
                 { name: 'DIPU', key: 'dipu', color: 'text-cyan-400' },
                 { name: 'AADESH', key: 'aadesh', color: 'text-yellow-400' }
               ].map(char => (
@@ -650,10 +688,10 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setCustomAI({ ab: 20, dipu: 20, aadesh: 20 })}
+                onClick={() => setCustomAI({ ab: 20, dipu: 20, aadesh: 20, johann: 20 })}
                 className="flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs text-red-400 font-bold border border-red-500/50 rounded cursor-pointer"
               >
-                20/20/20 MODE
+                20/20/20/20 MODE
               </button>
               <button
                 onClick={handleCustomStart}

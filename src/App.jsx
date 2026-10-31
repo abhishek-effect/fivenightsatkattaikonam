@@ -10,6 +10,7 @@ import NightWinScreen from './components/NightWinScreen';
 import GameOverScreen from './components/GameOverScreen';
 import StudioIntro from './components/StudioIntro';
 import PauseMenu from './components/PauseMenu';
+import TutorialGameplay from './components/TutorialGameplay';
 import { preloadAllAssets } from './utils/assetLoader';
 import { requestAppFullscreen } from './utils/fullscreen';
 import {
@@ -24,7 +25,7 @@ import {
 preloadAllAssets().catch(() => {});
 
 export default function App() {
-  const [screen, setScreen] = useState('STUDIO_INTRO'); // STUDIO_INTRO, MENU, INTRO, PLAYING, JUMPSCARE, GAME_OVER, WIN
+  const [screen, setScreen] = useState('STUDIO_INTRO'); // STUDIO_INTRO, MENU, TUTORIAL, INTRO, PLAYING, JUMPSCARE, GAME_OVER, WIN
   const [unlockedNight, setUnlockedNight] = useState(() => getUnlockedNight());
   const [currentNight, setCurrentNight] = useState(() => getSelectedNight());
   const [gameState, setGameState] = useState(null);
@@ -134,6 +135,12 @@ export default function App() {
     soundManager.resumeGameAudio();
   }, []);
 
+  // Safe prototype-preserving clone
+  const refreshGameState = useCallback((state) => {
+    if (!state) return null;
+    return Object.assign(Object.create(Object.getPrototypeOf(state)), state);
+  }, []);
+
   // Game Engine Event Dispatcher
   const handleGameEvent = useCallback((event) => {
     switch (event.type) {
@@ -142,6 +149,9 @@ export default function App() {
         break;
 
       case 'MOVEMENT':
+      case 'JOHANN_APPEARED':
+      case 'JOHANN_RETREAT':
+      case 'AB_SCARED':
         soundManager.playFootstep(false);
         break;
 
@@ -161,8 +171,19 @@ export default function App() {
         setTimeout(() => setIsDoorBanging(false), 1200);
         break;
 
-      case 'AADESH_AT_BLIND_SPOT':
-        soundManager.startHeartbeat();
+      case 'JOHANN_BANG':
+      case 'AB_BREAKING_IN':
+        soundManager.playDoorBang();
+        setIsDoorBanging(true);
+        setTimeout(() => setIsDoorBanging(false), 1200);
+        break;
+
+      case 'MASK_TOGGLE':
+        soundManager.playMaskSound(event.isMaskOn);
+        break;
+
+      case 'SCARE_AUDIO_PLAYED':
+        soundManager.playAbhishekScare();
         break;
 
       case 'BLACKOUT_START':
@@ -188,13 +209,11 @@ export default function App() {
         soundManager.stopSprintRunning();
         soundManager.stopBlackoutMusic();
 
-        // Unlock next night immediately upon beating shift
         {
           const wonNight = gameStateRef.current?.night ?? currentNightRef.current;
           const nextUnlocked = unlockNextNight(wonNight);
           setUnlockedNight(nextUnlocked);
 
-          // Advance selected night if within standard shift range
           if (wonNight < 5) {
             const nextNight = wonNight + 1;
             setCurrentNight(nextNight);
@@ -214,7 +233,7 @@ export default function App() {
     }
   }, []);
 
-  // Main Active Game Loop (Frozen when isPaused)
+  // Main Active Game Loop
   useEffect(() => {
     if (screen !== 'PLAYING' || !gameState || isPaused) return;
 
@@ -225,18 +244,11 @@ export default function App() {
       lastTime = now;
 
       gameState.tick(dt, handleGameEvent);
-      // Trigger safe state clone to refresh React tree without losing prototype
       setGameState(prev => (prev ? Object.assign(Object.create(Object.getPrototypeOf(prev)), prev) : prev));
     }, 100);
 
     return () => clearInterval(interval);
   }, [screen, gameState, isPaused, handleGameEvent]);
-
-  // Safe prototype-preserving clone
-  const refreshGameState = useCallback((state) => {
-    if (!state) return null;
-    return Object.assign(Object.create(Object.getPrototypeOf(state)), state);
-  }, []);
 
   // Player action handlers
   const handleToggleDoor = useCallback(() => {
@@ -245,7 +257,6 @@ export default function App() {
     soundManager.playDoorToggle(willClose);
 
     if (willClose) {
-      // Toggle door with active defense check: if enemy is standing at the door, bangs & retreats!
       gameState.toggleDoor(handleGameEvent);
     } else {
       gameState.isDoorClosed = false;
@@ -256,19 +267,35 @@ export default function App() {
 
   const handleToggleLight = useCallback(() => {
     if (!gameState || gameState.isBlackout || isPaused) return;
-    const newState = !gameState.isLightOn;
-    gameState.isLightOn = newState;
-    soundManager.playLightToggle(newState);
+    gameState.toggleLight(handleGameEvent);
+    soundManager.playLightToggle(gameState.isLightOn);
     setGameState(refreshGameState(gameState));
-  }, [gameState, refreshGameState, isPaused]);
+  }, [gameState, refreshGameState, handleGameEvent, isPaused]);
 
   const handleToggleMonitor = useCallback(() => {
-    if (!gameState || gameState.isBlackout || isPaused || gameState.isOmrUploading) return;
+    if (!gameState || gameState.isBlackout || isPaused || gameState.isOmrUploading || gameState.isMaskOn) return;
     const newState = !gameState.isMonitorOpen;
     gameState.isMonitorOpen = newState;
     soundManager.playCameraFlip(newState);
     setGameState(refreshGameState(gameState));
   }, [gameState, refreshGameState, isPaused]);
+
+  const handleToggleMask = useCallback(() => {
+    if (!gameState || gameState.isBlackout || isPaused || gameState.isOmrUploading) return;
+    const isMaskNow = gameState.toggleMask(handleGameEvent);
+    soundManager.playMaskSound(isMaskNow);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState, handleGameEvent, isPaused]);
+
+  const handlePlayScare = useCallback((targetCam = null) => {
+    if (!gameState || gameState.isBlackout || isPaused) return null;
+    const res = gameState.playScareAudio(targetCam, handleGameEvent);
+    if (res.success) {
+      soundManager.playAbhishekScare();
+    }
+    setGameState(refreshGameState(gameState));
+    return res;
+  }, [gameState, refreshGameState, handleGameEvent, isPaused]);
 
   const handleSelectCam = useCallback((camId) => {
     if (!gameState || isPaused) return;
@@ -285,7 +312,7 @@ export default function App() {
     return result;
   }, [gameState, refreshGameState, handleGameEvent]);
 
-  // Keyboard shortcut listener: Space (Monitor), D (Door), L (Light), ESC / P (Pause)
+  // Keyboard shortcut listener: Space (Monitor), D (Door), L (Light), M (Mask), A (Scare), ESC / P (Pause)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (screen !== 'PLAYING') return;
@@ -296,9 +323,8 @@ export default function App() {
         return;
       }
 
-      if (isPaused) return; // Don't process other hotkeys when paused
+      if (isPaused) return;
 
-      // User is locked on uploading screen until cancelled or completed
       if (gameState && gameState.isOmrUploading) {
         return;
       }
@@ -312,12 +338,18 @@ export default function App() {
       } else if (e.code === 'KeyL') {
         e.preventDefault();
         handleToggleLight();
+      } else if (e.code === 'KeyM') {
+        e.preventDefault();
+        handleToggleMask();
+      } else if (e.code === 'KeyA') {
+        e.preventDefault();
+        handlePlayScare(gameState.isMonitorOpen ? gameState.currentCam : 'CAM_5');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [screen, isPaused, gameState, handleTogglePause, handleToggleMonitor, handleToggleDoor, handleToggleLight]);
+  }, [screen, isPaused, gameState, handleTogglePause, handleToggleMonitor, handleToggleDoor, handleToggleLight, handleToggleMask, handlePlayScare]);
 
   return (
     <main className="w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black select-none">
@@ -335,6 +367,14 @@ export default function App() {
           onStartGame={handleStartGame}
           onSelectNight={handleSelectNight}
           onResetProgress={handleResetProgress}
+          onStartTutorial={() => setScreen('TUTORIAL')}
+        />
+      )}
+
+      {screen === 'TUTORIAL' && (
+        <TutorialGameplay
+          onFinish={handleMainMenu}
+          onStartNight1={() => handleStartGame(1)}
         />
       )}
 
@@ -352,6 +392,8 @@ export default function App() {
             onToggleDoor={handleToggleDoor}
             onToggleLight={handleToggleLight}
             onToggleMonitor={handleToggleMonitor}
+            onToggleMask={handleToggleMask}
+            onPlayScare={() => handlePlayScare('CAM_5')}
             onPause={handleTogglePause}
             isDoorBanging={isDoorBanging}
             onOmrComplete={handleOmrComplete}
@@ -362,6 +404,7 @@ export default function App() {
               gameState={gameState}
               onSelectCam={handleSelectCam}
               onToggleMonitor={handleToggleMonitor}
+              onPlayScare={handlePlayScare}
             />
           )}
 

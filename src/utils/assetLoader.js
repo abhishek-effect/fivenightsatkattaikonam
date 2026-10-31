@@ -18,6 +18,8 @@ export const ASSET_MANIFEST = {
     { id: 'cam-corridor-a', src: './assets/images/cam-corridor-a.jpg', label: 'CAM 2: Main Hallway Corridor' },
     { id: 'cam-corridor-b', src: './assets/images/cam-corridor-b.jpg', label: 'CAM 3: Supply Corridor' },
     { id: 'cam-stairs', src: './assets/images/cam-stairs.jpg', label: 'CAM 4: Central Staircase' },
+    { id: 'cam-corridor-c', src: './assets/images/cam-corridor-c.jpg', label: 'CAM 5: Corridor C' },
+    { id: 'cam-balcony', src: './assets/images/cam-balcony.jpg', label: 'CAM 6: Balcony Facility Feed' },
 
     // Character Cutouts & Poses
     { id: 'ab-cutout', src: './assets/images/ab-cutout.png', label: 'Subject AB Silhouette Feed' },
@@ -33,6 +35,10 @@ export const ASSET_MANIFEST = {
     { id: 'ab-jumpscare', src: './assets/images/ab-jumpscare.jpg', label: 'AB Threat Bio-Metrics' },
     { id: 'aadesh-jumpscare', src: './assets/images/aadesh-jumpscare.jpg', label: 'Aadesh Threat Bio-Metrics' },
     { id: 'dipu-jumpscare', src: './assets/images/dipu-jumpscare.png', label: 'Dipu Threat Bio-Metrics' },
+    { id: 'johann-jumpscare', src: './assets/images/johann-2.png', label: 'Johann Threat Bio-Metrics' },
+    { id: 'johann-door', src: './assets/images/johann-3.png', label: 'Johann Door Window Feed' },
+    { id: 'johann-photo', src: './assets/images/johann.jpg', label: 'Johann Identity Photo' },
+    { id: 'mask-overlay', src: './assets/images/mask.webp', label: 'Security Mask Helmet Overlay' },
 
     // Office Desk Monitor & OMR Subsystem
     { id: 'desk-monitor', src: './assets/images/monitor.webp', label: 'Security Terminal Monitor' },
@@ -46,6 +52,9 @@ export const ASSET_MANIFEST = {
     { id: 'running-sfx', src: './assets/audio/running-sfx.mp3', label: 'Sprint Footstep Acoustics' },
     { id: 'main-menu-bgm', src: './assets/audio/main-menu-bgm.mp3', label: 'Facility Ambience Feed' },
     { id: 'upload-success', src: './assets/audio/upload-success.mp3', label: 'OMR Upload Success Chime' },
+    { id: 'scare-attitude', src: './assets/audio/change-your-attitude-children.mp3', label: 'Scare Audio: Change Your Attitude' },
+    { id: 'scare-dpp', src: './assets/audio/submit-your-dpp.mp3', label: 'Scare Audio: Submit DPP' },
+    { id: 'scare-photocopy', src: './assets/audio/where-is-your-photocopy.mp3', label: 'Scare Audio: Photocopy' },
   ]
 };
 

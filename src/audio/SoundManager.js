@@ -13,6 +13,8 @@ class SoundManager {
     this.heartbeatTimer = null;
     this.menuBgm = null;
     this.uploadSuccessAudio = null;
+    this.scareAudios = [];
+    this.currentScareAudio = null;
     this.initAudioAssets();
   }
 
@@ -48,6 +50,17 @@ class SoundManager {
 
       this.uploadSuccessAudio = new Audio('./assets/audio/upload-success.mp3');
       this.uploadSuccessAudio.preload = 'auto';
+
+      const scareClips = [
+        './assets/audio/change-your-attitude-children.mp3',
+        './assets/audio/submit-your-dpp.mp3',
+        './assets/audio/where-is-your-photocopy.mp3'
+      ];
+      this.scareAudios = scareClips.map(src => {
+        const a = new Audio(src);
+        a.preload = 'auto';
+        return a;
+      });
     } catch (e) {
       console.warn('Audio assets init error:', e);
     }
@@ -63,7 +76,71 @@ class SoundManager {
     if (this.sprintAudio) this.sprintAudio.muted = this.isMuted;
     if (this.menuBgm) this.menuBgm.muted = this.isMuted;
     if (this.uploadSuccessAudio) this.uploadSuccessAudio.muted = this.isMuted;
+    if (this.scareAudios) {
+      this.scareAudios.forEach(a => { a.muted = this.isMuted; });
+    }
+    if (this.currentScareAudio) this.currentScareAudio.muted = this.isMuted;
     return this.isMuted;
+  }
+
+
+  // --- ABHISHEK SCARE AWAY AUDIO (TEACHER QUOTES) ---
+  playAbhishekScare() {
+    this.initContext();
+    if (this.isMuted) return null;
+
+    try {
+      if (this.currentScareAudio) {
+        this.currentScareAudio.pause();
+        this.currentScareAudio.currentTime = 0;
+      }
+
+      if (this.scareAudios && this.scareAudios.length > 0) {
+        const idx = Math.floor(Math.random() * this.scareAudios.length);
+        const audio = this.scareAudios[idx];
+        audio.currentTime = 0;
+        audio.volume = this.isMuted ? 0 : 1;
+        this.currentScareAudio = audio;
+        const p = audio.play();
+        if (p) p.catch(() => {});
+        return audio.src;
+      }
+    } catch (e) {
+      console.warn('Scare audio error:', e);
+    }
+    return null;
+  }
+
+  // --- MASK FLIP SFX ---
+  playMaskSound(isWearing) {
+    this.initContext();
+    if (!this.ctx || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      if (isWearing) {
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.16);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      } else {
+        osc.frequency.setValueAtTime(70, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.14);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      }
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.22);
+
+      this.playStaticBurst(0.08, 0.1);
+    } catch (_) {}
   }
 
   // --- MAIN MENU BGM ---

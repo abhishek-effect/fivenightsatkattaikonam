@@ -4,7 +4,8 @@ import { requestAppFullscreen } from '../utils/fullscreen';
 
 export default function GameOverScreen({ night, jumpscareWho, onRetry, onMainMenu }) {
   const getVictimMessage = (who) => {
-    if (who === 'ab') return 'Abhishek caught you unguarded at the doorway.';
+    if (who === 'ab') return 'Abhishek broke through your defense and caught you in the office.';
+    if (who === 'johann') return 'Johann bypassed the blast door and caught you without your mask.';
     if (who === 'dipu') return 'Dipu sprinted past your hallway defense.';
     if (who === 'aadesh') return 'Aadesh slipped through the blind spot unnoticed.';
     return 'The animatronics overwhelmed the security office.';

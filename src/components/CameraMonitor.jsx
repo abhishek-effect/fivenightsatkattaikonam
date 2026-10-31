@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Camera, AlertTriangle, ChevronDown, ChevronUp, Volume2, Radio } from 'lucide-react';
 import { CAMERAS } from '../game/gameEngine';
 import { soundManager } from '../audio/SoundManager';
 
@@ -7,9 +7,11 @@ export default function CameraMonitor({
   gameState,
   onSelectCam,
   onToggleMonitor,
+  onPlayScare,
 }) {
   const [switchingStatic, setSwitchingStatic] = useState(false);
   const [isMapMinimized, setIsMapMinimized] = useState(false);
+  const [scareMessage, setScareMessage] = useState(null);
 
   const activeCam = CAMERAS.find(c => c.id === gameState.currentCam) || CAMERAS[0];
 
@@ -23,11 +25,20 @@ export default function CameraMonitor({
     }, 100);
   };
 
+  const handleScareClick = () => {
+    if (gameState.scareCooldown > 0) return;
+    if (onPlayScare) {
+      const res = onPlayScare(gameState.currentCam);
+      setScareMessage('AUDIO BROADCAST ACTIVATED!');
+      setTimeout(() => setScareMessage(null), 2500);
+    }
+  };
+
   // Determine which animatronics are in the active room and use transparent cutouts
   const getActiveRoomThreats = () => {
     const threats = [];
 
-    // AADESH: uses clean transparent cutouts based on location!
+    // AADESH: uses clean transparent cutouts based on location
     if (gameState.currentCam === 'CAM_4' && gameState.aadesh.location === 'CAM_4') {
       threats.push({
         name: 'AADESH',
@@ -48,6 +59,20 @@ export default function CameraMonitor({
         photo: './assets/images/aadesh-frontfacing-cutout.png',
         pose: 'Roaming Physics Lab',
         posClass: 'bottom-8 sm:bottom-12 right-[28%] w-36 sm:w-48 md:w-60'
+      });
+    } else if (gameState.currentCam === 'CAM_5' && gameState.aadesh.location === 'CAM_5') {
+      threats.push({
+        name: 'AADESH',
+        photo: './assets/images/aadesh-frontfacing-cutout.png',
+        pose: 'Creeping through Corridor C',
+        posClass: 'bottom-8 sm:bottom-10 left-[36%] w-40 sm:w-52 md:w-64'
+      });
+    } else if (gameState.currentCam === 'CAM_6' && gameState.aadesh.location === 'CAM_6') {
+      threats.push({
+        name: 'AADESH',
+        photo: './assets/images/aadesh-sideways-cutout.png',
+        pose: 'Lurking along Balcony',
+        posClass: 'bottom-6 sm:bottom-8 left-[24%] w-36 sm:w-44 md:w-56'
       });
     }
 
@@ -77,7 +102,7 @@ export default function CameraMonitor({
       });
     }
 
-    // AB: uses transparent full-body and face cutouts
+    // AB: transparent cutouts across all rooms
     if (gameState.currentCam === 'CAM_1' && gameState.ab.location === 'CAM_1') {
       threats.push({
         name: 'AB',
@@ -99,6 +124,20 @@ export default function CameraMonitor({
         pose: 'Stalking Central Stairs',
         posClass: 'bottom-8 sm:bottom-12 right-[25%] w-36 sm:w-48 md:w-64'
       });
+    } else if (gameState.currentCam === 'CAM_5' && gameState.ab.location === 'CAM_5') {
+      threats.push({
+        name: 'AB',
+        photo: './assets/images/ab-random-cutout.png',
+        pose: 'ALERT: Outside Doorway in Corridor C!',
+        posClass: 'bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 w-44 sm:w-56 md:w-72'
+      });
+    } else if (gameState.currentCam === 'CAM_6' && gameState.ab.location === 'CAM_6') {
+      threats.push({
+        name: 'AB',
+        photo: './assets/images/ab-cutout.png',
+        pose: 'Pacing on Balcony',
+        posClass: 'bottom-8 sm:bottom-10 right-[26%] w-36 sm:w-48 md:w-64'
+      });
     }
 
     return threats;
@@ -106,14 +145,18 @@ export default function CameraMonitor({
 
   const activeThreats = getActiveRoomThreats();
 
-  // Blueprint Map Nodes with connection metadata
+  // Facility Map Nodes: CAM_1 to CAM_6 (Office is marker only)
   const mapNodes = [
-    { id: 'CAM_1', name: 'Physics Lab', cx: 160, cy: 38, w: 90, h: 32 },
-    { id: 'CAM_2', name: 'Main Corridor', cx: 160, cy: 110, w: 96, h: 32 },
-    { id: 'CAM_3', name: 'Supply Hall', cx: 48, cy: 110, w: 80, h: 32 },
-    { id: 'CAM_4', name: 'Stairs', cx: 272, cy: 110, w: 80, h: 32 },
-    { id: 'CAM_5', name: 'Office Door', cx: 160, cy: 178, w: 90, h: 30 },
+    { id: 'CAM_1', name: 'Physics Lab', cx: 160, cy: 30, w: 84, h: 26 },
+    { id: 'CAM_2', name: 'Main Corridor', cx: 160, cy: 84, w: 90, h: 26 },
+    { id: 'CAM_3', name: 'Supply Hall', cx: 52, cy: 84, w: 76, h: 26 },
+    { id: 'CAM_4', name: 'Stairs', cx: 268, cy: 84, w: 76, h: 26 },
+    { id: 'CAM_5', name: 'Corridor C', cx: 160, cy: 138, w: 84, h: 26 },
+    { id: 'CAM_6', name: 'Balcony', cx: 52, cy: 138, w: 76, h: 26 },
   ];
+
+  const isCooldown = gameState.scareCooldown > 0;
+  const cooldownSecs = Math.ceil(gameState.scareCooldown);
 
   return (
     <div className="fixed inset-0 z-45 bg-black flex flex-col justify-between overflow-hidden monitor-flip-up select-none">
@@ -139,7 +182,7 @@ export default function CameraMonitor({
             key={idx}
             className={`absolute ${threat.posClass} z-20 flex flex-col items-center pointer-events-none animate-pulse`}
           >
-            {/* Transparent Cutout Person (Background Removed) */}
+            {/* Transparent Cutout Person */}
             <div className="relative flex flex-col items-center">
               <img
                 src={threat.photo}
@@ -166,6 +209,16 @@ export default function CameraMonitor({
           </div>
         )}
 
+        {/* Scare Audio Toast Banner */}
+        {scareMessage && (
+          <div className="absolute top-16 inset-x-0 z-35 flex justify-center pointer-events-none animate-pulse">
+            <div className="bg-emerald-950/95 border-2 border-emerald-400 text-emerald-200 px-4 py-2 rounded-lg font-mono text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(16,185,129,0.9)] flex items-center gap-2">
+              <Radio size={16} className="text-emerald-400 animate-spin" />
+              <span>{scareMessage}</span>
+            </div>
+          </div>
+        )}
+
         {/* Switching Noise / Static Burst */}
         {switchingStatic && (
           <div className="absolute inset-0 bg-neutral-900 static-fuzz opacity-95 z-30" />
@@ -177,13 +230,13 @@ export default function CameraMonitor({
         <div className="crt-overlay" />
         <div className="crt-vignette" />
 
-        {/* Top Header Bar - Responsive for Mobile & Desktop */}
+        {/* Top Header Bar */}
         <div className="absolute top-2 sm:top-5 inset-x-2 sm:inset-x-6 z-40 flex justify-between items-start pointer-events-none">
           <div className="flex items-center gap-1.5 sm:gap-3 bg-black/85 backdrop-blur px-2 sm:px-4 py-1 sm:py-2 rounded-lg border border-neutral-700 shadow-xl">
             <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-red-600 animate-ping" />
             <span className="font-mono text-[10px] sm:text-base font-bold text-red-500 tracking-wider">● REC</span>
             <span className="text-gray-200 font-mono text-[9px] sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none">
-              {activeCam.id}: {activeCam.name}
+              {activeCam.id}: {activeCam.name} ({activeCam.sub})
             </span>
           </div>
 
@@ -195,8 +248,8 @@ export default function CameraMonitor({
           </div>
         </div>
 
-        {/* VISUAL ARCHITECTURAL BLUEPRINT MAP - Scaled down for Mobile Phones */}
-        <div className="absolute bottom-11 sm:bottom-16 md:bottom-20 right-2 sm:right-6 z-40 bg-neutral-950/95 backdrop-blur-md border border-emerald-500/80 sm:border-2 p-1.5 sm:p-3.5 rounded-lg sm:rounded-xl shadow-2xl pointer-events-auto w-[185px] sm:w-[280px] md:w-[330px]">
+        {/* VISUAL ARCHITECTURAL BLUEPRINT MAP */}
+        <div className="absolute bottom-11 sm:bottom-16 md:bottom-20 right-2 sm:right-6 z-40 bg-neutral-950/95 backdrop-blur-md border border-emerald-500/80 sm:border-2 p-1.5 sm:p-3 rounded-lg sm:rounded-xl shadow-2xl pointer-events-auto w-[205px] sm:w-[290px] md:w-[340px]">
           <div className="text-[9px] sm:text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider mb-1 sm:mb-1.5 flex items-center justify-between border-b border-emerald-900/60 pb-0.5 sm:pb-1">
             <div className="flex items-center gap-1 sm:gap-1.5">
               <Camera size={11} className="sm:w-3.5 sm:h-3.5" />
@@ -224,26 +277,38 @@ export default function CameraMonitor({
             </div>
           </div>
 
-          {/* SVG Map Showing How Places Physically Connect to Each Other (Hidden when Minimized) */}
+          {/* SVG Map Showing Corridor Connections & Physical Layout */}
           {!isMapMinimized && (
-            <div className="relative w-full h-[95px] sm:h-[155px] md:h-[190px] bg-black/80 rounded border border-emerald-950 p-0.5 sm:p-1 flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-[105px] sm:h-[160px] md:h-[195px] bg-black/80 rounded border border-emerald-950 p-0.5 sm:p-1 flex items-center justify-center overflow-hidden">
               <svg viewBox="0 0 320 220" className="w-full h-full">
-                {/* Hallway connection corridors */}
-                <line x1="160" y1="54" x2="160" y2="94" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-                <line x1="160" y1="54" x2="160" y2="94" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                {/* Physical corridor connection lines */}
+                {/* CAM 1 to CAM 2 */}
+                <line x1="160" y1="43" x2="160" y2="71" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
+                <line x1="160" y1="43" x2="160" y2="71" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-                <line x1="112" y1="110" x2="88" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-                <line x1="112" y1="110" x2="88" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                {/* CAM 2 to CAM 3 */}
+                <line x1="115" y1="84" x2="90" y2="84" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
+                <line x1="115" y1="84" x2="90" y2="84" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-                <line x1="208" y1="110" x2="232" y2="110" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-                <line x1="208" y1="110" x2="232" y2="110" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                {/* CAM 2 to CAM 4 */}
+                <line x1="205" y1="84" x2="230" y2="84" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
+                <line x1="205" y1="84" x2="230" y2="84" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-                <line x1="160" y1="126" x2="160" y2="163" stroke="#064e3b" strokeWidth="8" strokeLinecap="round" />
-                <line x1="160" y1="126" x2="160" y2="163" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                {/* CAM 2 to CAM 5 */}
+                <line x1="160" y1="97" x2="160" y2="125" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
+                <line x1="160" y1="97" x2="160" y2="125" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-                <line x1="160" y1="193" x2="160" y2="210" stroke="#047857" strokeWidth="6" strokeDasharray="2 2" />
+                {/* CAM 5 to CAM 6 */}
+                <line x1="118" y1="138" x2="90" y2="138" stroke="#064e3b" strokeWidth="6" strokeLinecap="round" />
+                <line x1="118" y1="138" x2="90" y2="138" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
 
-                {/* Interactive Room Nodes */}
+                {/* CAM 3 to CAM 6 vertical line */}
+                <line x1="52" y1="97" x2="52" y2="125" stroke="#064e3b" strokeWidth="4" strokeDasharray="2 2" />
+
+                {/* CAM 5 down to Office Door */}
+                <line x1="160" y1="151" x2="160" y2="188" stroke="#047857" strokeWidth="5" strokeDasharray="3 3" />
+
+                {/* Interactive Room Nodes (CAM 1 to 6) */}
                 {mapNodes.map((node) => {
                   const isSelected = node.id === gameState.currentCam;
                   const rx = node.cx - node.w / 2;
@@ -257,11 +322,11 @@ export default function CameraMonitor({
                     >
                       {isSelected && (
                         <rect
-                          x={rx - 3}
-                          y={ry - 3}
-                          width={node.w + 6}
-                          height={node.h + 6}
-                          rx="6"
+                          x={rx - 2.5}
+                          y={ry - 2.5}
+                          width={node.w + 5}
+                          height={node.h + 5}
+                          rx="5"
                           fill="none"
                           stroke="#34d399"
                           strokeWidth="2"
@@ -284,7 +349,7 @@ export default function CameraMonitor({
                         y={node.cy - 1}
                         textAnchor="middle"
                         fill={isSelected ? '#a7f3d0' : '#e5e5e5'}
-                        fontSize="9.5"
+                        fontSize="9"
                         fontWeight="bold"
                         fontFamily="monospace"
                       >
@@ -292,10 +357,10 @@ export default function CameraMonitor({
                       </text>
                       <text
                         x={node.cx}
-                        y={node.cy + 10}
+                        y={node.cy + 9}
                         textAnchor="middle"
                         fill={isSelected ? '#6ee7b7' : '#9ca3af'}
-                        fontSize="8"
+                        fontSize="7.5"
                         fontFamily="monospace"
                       >
                         {node.name}
@@ -304,10 +369,12 @@ export default function CameraMonitor({
                   );
                 })}
 
-                {/* You are Here tag */}
-                <g transform="translate(160, 212)">
-                  <rect x="-35" y="-7" width="70" height="15" rx="3" fill="#047857" />
-                  <text x="0" y="3.5" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold" fontFamily="monospace">
+                {/* Office Location Marker (INFO ONLY - NOT A CAMERA) */}
+                <g transform="translate(160, 196)">
+                  <rect x="-48" y="-9" width="96" height="18" rx="4" fill="#022c22" stroke="#059669" strokeWidth="1.5" />
+                  <circle cx="-36" cy="0" r="3.5" fill="#34d399" className="animate-ping" />
+                  <circle cx="-36" cy="0" r="2" fill="#10b981" />
+                  <text x="6" y="3.5" textAnchor="middle" fill="#a7f3d0" fontSize="8" fontWeight="bold" fontFamily="monospace">
                     YOU (OFFICE)
                   </text>
                 </g>
@@ -315,15 +382,36 @@ export default function CameraMonitor({
             </div>
           )}
 
-          {/* Quick-Switch Camera Buttons Strip */}
-          <div className="grid grid-cols-5 gap-0.5 sm:gap-1 pt-1 sm:pt-1.5 border-t border-emerald-900/50 mt-1 sm:mt-1.5">
+          {/* SCARE AUDIO TRIGGER BUTTON (10s Countdown) */}
+          <div className="pt-1 sm:pt-1.5 border-t border-emerald-900/50 mt-1">
+            <button
+              onClick={handleScareClick}
+              disabled={isCooldown}
+              className={`w-full py-1 sm:py-1.5 rounded font-mono text-[8px] sm:text-[10px] font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shadow cursor-pointer ${
+                isCooldown
+                  ? 'bg-neutral-800 text-neutral-400 border border-neutral-700 cursor-not-allowed'
+                  : 'bg-red-700 hover:bg-red-600 text-white border border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)] animate-pulse'
+              }`}
+              title={isCooldown ? `Scare Audio recharging (${cooldownSecs}s)` : `Play Scare Audio in ${activeCam.id} [A]`}
+            >
+              <Volume2 size={12} className={isCooldown ? 'text-neutral-500' : 'text-yellow-300'} />
+              <span>
+                {isCooldown
+                  ? `SCARE COOLDOWN (${cooldownSecs}s)`
+                  : `🔊 SCARE ABHISHEK IN ${activeCam.id.replace('_', ' ')}`}
+              </span>
+            </button>
+          </div>
+
+          {/* Quick-Switch Camera Buttons Strip (CAM 1 to 6) */}
+          <div className="grid grid-cols-6 gap-0.5 sm:gap-1 pt-1 border-t border-emerald-900/50 mt-1">
             {CAMERAS.map((cam) => {
               const isSelected = cam.id === gameState.currentCam;
               return (
                 <button
                   key={cam.id}
                   onClick={() => handleCameraChange(cam.id)}
-                  className={`py-0.5 sm:py-1 rounded font-mono text-[7.5px] sm:text-[9px] font-bold transition active:scale-95 cursor-pointer text-center ${
+                  className={`py-0.5 sm:py-1 rounded font-mono text-[7px] sm:text-[8.5px] font-bold transition active:scale-95 cursor-pointer text-center ${
                     isSelected
                       ? 'bg-emerald-600 text-white shadow-[0_0_8px_#10b981]'
                       : 'bg-black/70 text-gray-400 hover:text-white border border-neutral-800'
@@ -335,7 +423,7 @@ export default function CameraMonitor({
             })}
           </div>
 
-          <div className="mt-0.5 sm:mt-1 text-[7px] sm:text-[9px] font-mono text-gray-400 flex justify-between items-center px-0.5 sm:px-1">
+          <div className="mt-0.5 sm:mt-1 text-[7px] sm:text-[8.5px] font-mono text-gray-400 flex justify-between items-center px-0.5 sm:px-1">
             <span className="flex items-center gap-1">
               <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-400 inline-block animate-ping" />
               <span>ACTIVE: {activeCam.id}</span>
