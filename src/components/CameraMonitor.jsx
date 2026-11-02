@@ -140,6 +140,39 @@ export default function CameraMonitor({
       });
     }
 
+    // JOHANN: visible across cameras CAM 6 (Balcony), CAM 4 (Stairs), CAM 2 (Main Corridor), and CAM 5 (Corridor C)
+    if (gameState.johann) {
+      if (gameState.currentCam === 'CAM_6' && gameState.johann.location === 'CAM_6') {
+        threats.push({
+          name: 'JOHANN',
+          photo: './assets/images/johann-2.png',
+          pose: 'Pacing the Balcony',
+          posClass: 'bottom-6 sm:bottom-8 left-[18%] w-36 sm:w-48 md:w-60'
+        });
+      } else if (gameState.currentCam === 'CAM_4' && gameState.johann.location === 'CAM_4') {
+        threats.push({
+          name: 'JOHANN',
+          photo: './assets/images/johann-3.png',
+          pose: 'Peering from Central Stairs',
+          posClass: 'bottom-6 sm:bottom-8 left-[16%] w-32 sm:w-42 md:w-54'
+        });
+      } else if (gameState.currentCam === 'CAM_2' && gameState.johann.location === 'CAM_2') {
+        threats.push({
+          name: 'JOHANN',
+          photo: './assets/images/johann-2.png',
+          pose: 'Walking Main Corridor',
+          posClass: 'bottom-6 sm:bottom-10 right-[20%] w-40 sm:w-52 md:w-66'
+        });
+      } else if (gameState.currentCam === 'CAM_5' && gameState.johann.location === 'CAM_5') {
+        threats.push({
+          name: 'JOHANN',
+          photo: './assets/images/johann-3.png',
+          pose: 'ALERT! Approaching Office in Corridor C!',
+          posClass: 'bottom-6 sm:bottom-10 left-[22%] w-36 sm:w-48 md:w-60'
+        });
+      }
+    }
+
     return threats;
   };
 

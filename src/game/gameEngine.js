@@ -394,6 +394,7 @@ export class GameState {
   }
 
   // --- JOHANN AI ---
+  // Roams CAM_6 (Balcony) -> CAM_4/2 -> CAM_5 (Corridor C) -> DOOR.
   // Can be seen through closed door window.
   // After 2 seconds, bangs the door. After 5 seconds, kills you.
   // Goes away if player wears mask.
@@ -406,11 +407,11 @@ export class GameState {
         this.johann.maskTimer += dt;
         // After wearing mask for ~0.8s while Johann is there, he retreats!
         if (this.johann.maskTimer >= 0.8) {
-          this.johann.location = 'IDLE';
+          this.johann.location = Math.random() < 0.5 ? 'CAM_6' : 'CAM_4';
           this.johann.timer = 0;
           this.johann.hasBanged = false;
           this.johann.maskTimer = 0;
-          if (onEvent) onEvent({ type: 'JOHANN_RETREAT' });
+          if (onEvent) onEvent({ type: 'JOHANN_RETREAT', to: this.johann.location });
           return;
         }
       } else {
@@ -430,17 +431,31 @@ export class GameState {
       return;
     }
 
-    // IDLE AI check every ~4.5s
+    // Camera roaming movement check every ~4.0s
     this.johannMoveTimer = (this.johannMoveTimer || 0) + dt;
-    if (this.johannMoveTimer >= 4.5) {
+    if (this.johannMoveTimer >= 4.0) {
       this.johannMoveTimer = 0;
       const roll = Math.floor(Math.random() * 20) + 1;
       if (roll <= this.johannLevel) {
-        this.johann.location = 'DOOR';
-        this.johann.timer = 0;
-        this.johann.hasBanged = false;
-        this.johann.maskTimer = 0;
-        if (onEvent) onEvent({ type: 'JOHANN_AT_DOOR' });
+        if (this.johann.location === 'CAM_6') {
+          this.johann.location = Math.random() < 0.5 ? 'CAM_2' : 'CAM_4';
+          onEvent({ type: 'MOVEMENT', animatronic: 'johann', to: this.johann.location });
+        } else if (this.johann.location === 'CAM_4') {
+          this.johann.location = 'CAM_5';
+          onEvent({ type: 'MOVEMENT', animatronic: 'johann', to: 'CAM_5' });
+        } else if (this.johann.location === 'CAM_2') {
+          this.johann.location = 'CAM_5';
+          onEvent({ type: 'MOVEMENT', animatronic: 'johann', to: 'CAM_5' });
+        } else if (this.johann.location === 'CAM_5') {
+          this.johann.location = 'DOOR';
+          this.johann.timer = 0;
+          this.johann.hasBanged = false;
+          this.johann.maskTimer = 0;
+          onEvent({ type: 'ENEMY_AT_DOOR', animatronic: 'johann' });
+          onEvent({ type: 'JOHANN_AT_DOOR' });
+        } else {
+          this.johann.location = 'CAM_6';
+        }
       }
     }
   }

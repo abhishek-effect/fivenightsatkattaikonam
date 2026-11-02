@@ -1,603 +1,526 @@
-import React, { useState } from 'react';
-import { Shield, Play, Home, CheckCircle2, Volume2, Lock, Unlock, Lightbulb, Camera, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Shield, Play, Home, CheckCircle2, Volume2, Lock, Unlock, Lightbulb, Camera, Upload, AlertTriangle, Radio, Sparkles, ChevronRight, X } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
+import OfficeView from './OfficeView';
+import CameraMonitor from './CameraMonitor';
+import { CAMERAS } from '../game/gameEngine';
 
 export default function TutorialGameplay({ onFinish, onStartNight1 }) {
-  const [step, setStep] = useState(0);
+  // Tutorial Step Tracking: 0 to 8
+  // 0: LOOK_AROUND
+  // 1: DOOR_AND_LIGHT
+  // 2: OPEN_CAMERAS
+  // 3: EXPLORE_CAMERAS (Spot Johann & Dipu)
+  // 4: SCARE_ABHISHEK
+  // 5: OMR_UPLOAD
+  // 6: JOHANN_MASK
+  // 7: AADESH_LIGHT
+  // 8: COMPLETE
+  const [currentStep, setCurrentStep] = useState(0);
 
-  // Simulation states
-  const [testDoorClosed, setTestDoorClosed] = useState(false);
-  const [testLightOn, setTestLightOn] = useState(false);
-  const [testMaskOn, setTestMaskOn] = useState(false);
-  const [testScareDone, setTestScareDone] = useState(false);
-  const [testAadeshRepelled, setTestAadeshRepelled] = useState(false);
-  const [testDipuRepelled, setTestDipuRepelled] = useState(false);
-  const [testOmrProgress, setTestOmrProgress] = useState(0);
-  const [testOmrUploading, setTestOmrUploading] = useState(false);
-  const [testOmrDone, setTestOmrDone] = useState(false);
+  // Controlled sample gameplay state
+  const [doorClosed, setDoorClosed] = useState(false);
+  const [lightOn, setLightOn] = useState(false);
+  const [monitorOpen, setMonitorOpen] = useState(false);
+  const [maskOn, setMaskOn] = useState(false);
+  const [currentCam, setCurrentCam] = useState('CAM_1');
   const [scareCooldown, setScareCooldown] = useState(0);
+  const [time, setTime] = useState(12); // starts 12 AM
+  const [isDoorBanging, setIsDoorBanging] = useState(false);
+  const [hasLookedAround, setHasLookedAround] = useState(false);
 
-  const steps = [
-    { title: 'WELCOME & BASIC CONTROLS', category: 'OFFICE BASICS' },
-    { title: 'ABHISHEK (AB) - DOOR BREAKER', category: 'ENEMY DEFENSE' },
-    { title: 'JOHANN - DOOR PEEPER & MASK', category: 'ENEMY DEFENSE' },
-    { title: 'AADESH - LIGHT AFTER DOOR', category: 'ENEMY DEFENSE' },
-    { title: 'DIPU - HALLWAY SPRINTER', category: 'ENEMY DEFENSE' },
-    { title: 'DESK TERMINAL & OMR UPLOADS', category: 'SPEEDRUN MECHANIC' },
-    { title: 'READY FOR SHIFT', category: 'GRADUATION' },
-  ];
+  // Enemy states for guided sample night
+  const [enemyLocations, setEnemyLocations] = useState({
+    ab: 'CAM_1',
+    dipu: 0,
+    aadesh: 'CAM_4',
+    johann: 'CAM_6', // Visible on Balcony right from the start!
+    johannBanged: false,
+  });
 
-  // Step 1: Door & Light
-  const handleToggleDoor = () => {
-    const next = !testDoorClosed;
-    setTestDoorClosed(next);
+  // Action completion flags for current step
+  const [stepActions, setStepActions] = useState({
+    panned: false,
+    toggledDoor: false,
+    toggledLight: false,
+    openedMonitor: false,
+    checkedJohannCam: false,
+    checkedDipuCam: false,
+    scaredAb: false,
+    omrUploaded: false,
+    maskDefendedJohann: false,
+    aadeshDefended: false,
+  });
+
+  // Simulated power & usage
+  const simulatedGameState = {
+    night: 'TUTORIAL',
+    time: time === 12 ? 0 : time,
+    power: 100,
+    isBlackout: false,
+    isDoorClosed: doorClosed,
+    isLightOn: lightOn,
+    isMonitorOpen: monitorOpen,
+    isMaskOn: maskOn,
+    currentCam: currentCam,
+    scareCooldown: scareCooldown,
+    isOmrUploading: false,
+    omrCooldown: 0,
+    omrQuota: 1,
+    ab: { location: enemyLocations.ab, atDoorTimer: 0, hasBangedDoor: false },
+    dipu: { stage: enemyLocations.dipu, sprintTimer: 0, stallTimer: 0 },
+    aadesh: { location: enemyLocations.aadesh, atBlindSpotTimer: 0, wasDoorClosedWhilePresent: false },
+    johann: {
+      location: enemyLocations.johann,
+      timer: 0,
+      hasBanged: enemyLocations.johannBanged,
+      maskTimer: 0,
+    },
+    getUsageBars: () => {
+      let b = 1;
+      if (doorClosed) b += 2;
+      if (lightOn) b += 1;
+      if (monitorOpen) b += 1;
+      return Math.min(5, b);
+    }
+  };
+
+  // Cooldown countdown tick
+  useEffect(() => {
+    if (scareCooldown <= 0) return;
+    const t = setInterval(() => {
+      setScareCooldown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [scareCooldown]);
+
+  // Track initial look around in Step 0
+  useEffect(() => {
+    const handleMove = () => {
+      setHasLookedAround(true);
+      setStepActions(prev => ({ ...prev, panned: true }));
+    };
+    window.addEventListener('mousemove', handleMove, { once: true });
+    window.addEventListener('touchmove', handleMove, { once: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+    };
+  }, []);
+
+  // Ambient fan start on mount
+  useEffect(() => {
+    soundManager.startFan();
+    return () => {
+      soundManager.stopFan();
+      soundManager.stopSprintRunning();
+      soundManager.stopHeartbeat();
+    };
+  }, []);
+
+  // Configure enemies based on current step
+  useEffect(() => {
+        if (currentStep === 3) {
+      // Step 3: Explore cameras -> Johann in CAM_6 (Balcony), Dipu in CAM_3, AB in CAM_2
+      setEnemyLocations(prev => ({
+        ...prev,
+        johann: 'CAM_6',
+        dipu: 0,
+        ab: 'CAM_2',
+      }));
+    } else if (currentStep === 4) {
+      // Step 4: Abhishek approaching Corridor C!
+      setEnemyLocations(prev => ({
+        ...prev,
+        ab: 'CAM_5',
+        johann: 'CAM_6',
+      }));
+    } else if (currentStep === 5) {
+      // Step 5: OMR desk upload -> close cameras so desk is visible
+      setMonitorOpen(false);
+      setMaskOn(false);
+    } else if (currentStep === 6) {
+      // Step 6: Johann attacks at the door!
+      setMonitorOpen(false);
+      setMaskOn(false);
+      setDoorClosed(true); // door is closed so player sees him through window
+      setLightOn(false);
+      setEnemyLocations(prev => ({
+        ...prev,
+        johann: 'DOOR',
+        johannBanged: false,
+      }));
+      // After 2.2s, Johann bangs on the door
+      const bangTimer = setTimeout(() => {
+        soundManager.playDoorBang();
+        setIsDoorBanging(true);
+        setEnemyLocations(p => ({ ...p, johannBanged: true }));
+        setTimeout(() => setIsDoorBanging(false), 1200);
+      }, 2200);
+      return () => clearTimeout(bangTimer);
+    } else if (currentStep === 7) {
+      // Step 7: Aadesh at the blind spot!
+      setMonitorOpen(false);
+      setMaskOn(false);
+      setDoorClosed(false);
+      setLightOn(true); // Light on shows Aadesh in doorway
+      setEnemyLocations(prev => ({
+        ...prev,
+        aadesh: 'BLIND_SPOT',
+        johann: 'CAM_4',
+      }));
+    } else if (currentStep === 8) {
+      // Complete!
+      soundManager.play6AMChimes();
+    }
+  }, [currentStep]);
+
+  // Handle Door Toggle
+  const handleToggleDoor = useCallback(() => {
+    const next = !doorClosed;
+    setDoorClosed(next);
     soundManager.playDoorToggle(next);
 
-    // Check Aadesh condition: door closed AND light turned on
-    if (next && testLightOn && !testAadeshRepelled) {
-      soundManager.playDoorBang();
-      setTestAadeshRepelled(true);
-    }
-  };
+    setStepActions(prev => ({ ...prev, toggledDoor: true }));
 
-  const handleToggleLight = () => {
-    const next = !testLightOn;
-    setTestLightOn(next);
+    // Step 7 Aadesh defense check: door must be closed AND light turned on
+    if (currentStep === 7) {
+      if (next && lightOn) {
+        soundManager.playDoorBang();
+        setIsDoorBanging(true);
+        setTimeout(() => setIsDoorBanging(false), 1200);
+        setEnemyLocations(p => ({ ...p, aadesh: 'CAM_4' }));
+        setStepActions(p => ({ ...p, aadeshDefended: true }));
+        setTimeout(() => setCurrentStep(8), 2000);
+      }
+    }
+  }, [doorClosed, lightOn, currentStep]);
+
+  // Handle Light Toggle
+  const handleToggleLight = useCallback(() => {
+    const next = !lightOn;
+    setLightOn(next);
     soundManager.playLightToggle(next);
 
-    // Check Aadesh condition: door closed AND light turned on
-    if (testDoorClosed && next && !testAadeshRepelled) {
-      soundManager.playDoorBang();
-      setTestAadeshRepelled(true);
+    setStepActions(prev => ({ ...prev, toggledLight: true }));
+
+    // Step 7 Aadesh defense check: door closed AND light turned on
+    if (currentStep === 7) {
+      if (doorClosed && next) {
+        soundManager.playDoorBang();
+        setIsDoorBanging(true);
+        setTimeout(() => setIsDoorBanging(false), 1200);
+        setEnemyLocations(p => ({ ...p, aadesh: 'CAM_4' }));
+        setStepActions(p => ({ ...p, aadeshDefended: true }));
+        setTimeout(() => setCurrentStep(8), 2000);
+      }
     }
-  };
+  }, [doorClosed, lightOn, currentStep]);
 
-  // Step 2: Abhishek Scare
-  const handleScareAbhishek = () => {
-    if (scareCooldown > 0) return;
-    soundManager.playAbhishekScare();
-    setTestScareDone(true);
-    setScareCooldown(10);
-    const timer = setInterval(() => {
-      setScareCooldown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  // Handle Monitor Toggle
+  const handleToggleMonitor = useCallback(() => {
+    if (maskOn) return;
+    const next = !monitorOpen;
+    setMonitorOpen(next);
+    soundManager.playCameraFlip(next);
 
-  // Step 3: Johann Mask
-  const handleToggleMask = () => {
-    const next = !testMaskOn;
-    setTestMaskOn(next);
+    if (next) {
+      setStepActions(prev => ({ ...prev, openedMonitor: true }));
+      if (currentStep === 2) {
+        setTimeout(() => setCurrentStep(3), 800);
+      }
+    } else {
+      if (currentStep === 4 && stepActions.scaredAb) {
+        setCurrentStep(5);
+      }
+    }
+  }, [monitorOpen, maskOn, currentStep, stepActions.scaredAb]);
+
+  // Handle Mask Toggle
+  const handleToggleMask = useCallback(() => {
+    const next = !maskOn;
+    setMaskOn(next);
     soundManager.playMaskSound(next);
-  };
 
-  // Step 5: Dipu Slam
-  const handleSlamDipu = () => {
-    soundManager.playDoorToggle(true);
-    soundManager.playDoorBang();
-    setTestDipuRepelled(true);
-  };
+    // Step 6: Johann defense
+    if (currentStep === 6 && next) {
+      setTimeout(() => {
+        // Johann is fooled!
+        setEnemyLocations(p => ({ ...p, johann: 'CAM_6', johannBanged: false }));
+        setStepActions(p => ({ ...p, maskDefendedJohann: true }));
+        soundManager.playFootstep(false);
+        setTimeout(() => setCurrentStep(7), 2500);
+      }, 1200);
+    }
+  }, [maskOn, currentStep]);
 
-  // Step 6: OMR Upload
-  const handleStartOmr = () => {
-    if (testOmrUploading || testOmrDone) return;
-    setTestOmrUploading(true);
-    setTestOmrProgress(10);
-    const interval = setInterval(() => {
-      setTestOmrProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTestOmrUploading(false);
-          setTestOmrDone(true);
-          soundManager.playUploadSuccess();
-          return 100;
-        }
-        return prev + 25;
-      });
-    }, 300);
-  };
+  // Handle Camera Switch
+  const handleSelectCam = useCallback((camId) => {
+    setCurrentCam(camId);
+    soundManager.playStaticBurst(0.1, 0.2);
+
+    if (camId === 'CAM_6' || camId === 'CAM_4') {
+      setStepActions(prev => ({ ...prev, checkedJohannCam: true }));
+    }
+    if (camId === 'CAM_3') {
+      setStepActions(prev => ({ ...prev, checkedDipuCam: true }));
+    }
+  }, []);
+
+  // Handle Scare Audio
+  const handlePlayScare = useCallback((targetCam = null) => {
+    if (scareCooldown > 0) return null;
+    soundManager.playAbhishekScare();
+    setScareCooldown(10);
+    setStepActions(prev => ({ ...prev, scaredAb: true }));
+
+    // Abhishek moves away
+    setEnemyLocations(prev => ({
+      ...prev,
+      ab: 'CAM_1',
+    }));
+
+    if (currentStep === 4) {
+      setTimeout(() => {
+        // Suggest closing cameras
+      }, 1500);
+    }
+
+    return { success: true, abAffected: true };
+  }, [scareCooldown, currentStep]);
+
+  // Handle OMR Upload Complete in Step 5
+  const handleOmrComplete = useCallback(() => {
+    soundManager.playUploadSuccess();
+    setTime(1); // advances from 12 AM to 1 AM
+    setStepActions(prev => ({ ...prev, omrUploaded: true }));
+    setTimeout(() => {
+      setCurrentStep(6);
+    }, 2000);
+    return { hourSkipped: true, newHour: 1 };
+  }, []);
+
+  // Keyboard shortcut listener for trial night
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'KeyD') {
+        e.preventDefault();
+        handleToggleDoor();
+      } else if (e.code === 'KeyL') {
+        e.preventDefault();
+        handleToggleLight();
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        handleToggleMonitor();
+      } else if (e.code === 'KeyM') {
+        e.preventDefault();
+        handleToggleMask();
+      } else if (e.code === 'KeyA') {
+        e.preventDefault();
+        handlePlayScare(monitorOpen ? currentCam : 'CAM_5');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleToggleDoor, handleToggleLight, handleToggleMonitor, handleToggleMask, handlePlayScare, monitorOpen, currentCam]);
+
+  // Tutorial Step Instructional Prompts
+  const tutorialSteps = [
+    {
+      id: 0,
+      title: 'STEP 1: EXPLORE SECURITY OFFICE',
+      guide: 'Welcome to your trial night shift at IIT Chanthavila! Move your mouse or drag the screen to pan around the panoramic office.',
+      objective: 'Look around the room (Desk on left, Blast Door on right)',
+      actionHint: 'Move your mouse or swipe across the screen',
+      check: true,
+      canNext: true,
+    },
+    {
+      id: 1,
+      title: 'STEP 2: BLAST DOOR & HALLWAY LIGHT',
+      guide: 'On your right wall is the Defense Panel. Press [D] to lock the door, and [L] to turn on the hallway light outside.',
+      objective: 'Toggle the Blast Door [D] and Hallway Light [L]',
+      actionHint: 'Tap DOOR and LIGHT buttons, or press [D] and [L]',
+      check: stepActions.toggledDoor && stepActions.toggledLight,
+      canNext: stepActions.toggledDoor && stepActions.toggledLight,
+    },
+    {
+      id: 2,
+      title: 'STEP 3: OPEN CCTV MONITOR',
+      guide: 'You have 6 CCTV surveillance cameras covering the facility. Press [SPACE] or tap the surveillance bar below to flip up your monitor.',
+      objective: 'Open the CCTV camera tablet [SPACE]',
+      actionHint: 'Click ▲ SURVEILLANCE CAMERAS or press [SPACE]',
+      check: monitorOpen,
+      canNext: monitorOpen,
+    },
+    {
+      id: 3,
+      title: 'STEP 4: LOCATE ENEMIES ON CAMERAS',
+      guide: 'Johann is now visible on camera! Click CAM 6 (Balcony) to spot Johann pacing outside! Also check CAM 3 (Supply Hall) where Dipu rests—watching Dipu keeps him stalled.',
+      objective: 'Click through cameras and spot Johann on CAM 6',
+      actionHint: 'Click CAM 6 on the map to view Johann',
+      check: stepActions.checkedJohannCam,
+      canNext: true,
+    },
+    {
+      id: 4,
+      title: 'STEP 5: ABHISHEK & SCARE AUDIO [A]',
+      guide: 'WARNING: Abhishek is near! Abhishek breaks in even if the door is closed! Closing the door will NOT save you. Click "🔊 SCARE ABHISHEK" to broadcast teacher voice quotes and scare him away!',
+      objective: 'Click "SCARE ABHISHEK" [A] (10s countdown cooldown)',
+      actionHint: 'Click 🔊 SCARE ABHISHEK or press [A]',
+      check: stepActions.scaredAb,
+      canNext: stepActions.scaredAb,
+    },
+    {
+      id: 5,
+      title: 'STEP 6: OMR DESK TERMINAL',
+      guide: 'Close cameras [SPACE] and look at your desk on the left. Click the Desk Monitor to test OMR upload. Completing uploads skips 1 whole hour toward 6 AM with 0% battery drain!',
+      objective: 'Click Desk Monitor and upload an OMR sheet',
+      actionHint: 'Click the computer screen on the desk',
+      check: stepActions.omrUploaded,
+      canNext: stepActions.omrUploaded,
+    },
+    {
+      id: 6,
+      title: 'STEP 7: JOHANN DOOR ATTACK & MASK [M]',
+      guide: 'LOOK AT THE DOOR! Johann is staring through the glass window! After 2s he bangs, after 5s he attacks! Equip your MASK [M] immediately to fool him!',
+      objective: 'Press [M] to put on your security mask overlay',
+      actionHint: 'Press [M] or tap MASK button on the wall',
+      check: stepActions.maskDefendedJohann,
+      canNext: stepActions.maskDefendedJohann,
+    },
+    {
+      id: 7,
+      title: 'STEP 8: AADESH BLIND SPOT DEFENSE',
+      guide: 'Aadesh has arrived outside in your doorway blind spot! Closing the door alone won\'t make him leave: you must CLOSE THE DOOR [D] and then TURN ON THE LIGHT [L] to scare him away!',
+      objective: 'Close Door [D] -> Turn On Light [L] to repel Aadesh',
+      actionHint: '1. Close Door [D] -> 2. Turn on Light [L]',
+      check: stepActions.aadeshDefended,
+      canNext: stepActions.aadeshDefended,
+    },
+    {
+      id: 8,
+      title: 'TRIAL NIGHT GRADUATION',
+      guide: '6:00 AM! You have survived the trial shift and learned every defense: Cameras, Door, Light, Mask, Scare Audio, and OMR Fast-forwarding. You are ready for Night 1!',
+      objective: 'Shift cleared with 100% survival rate',
+      actionHint: 'Click START NIGHT 1 below to begin your journey!',
+      check: true,
+      canNext: true,
+    },
+  ];
+
+  const currentTutorial = tutorialSteps[currentStep] || tutorialSteps[0];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 text-gray-200 flex flex-col justify-between p-3 sm:p-6 md:p-8 font-mono select-none overflow-y-auto">
-      {/* Top Header */}
-      <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-emerald-400 font-bold tracking-widest text-xs sm:text-sm uppercase">
-            TUTORIAL GAMEPLAY // STEP {step + 1} OF {steps.length}
-          </span>
-        </div>
-        <button
-          onClick={onFinish}
-          className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-300 rounded text-xs transition cursor-pointer"
-        >
-          EXIT TUTORIAL
-        </button>
-      </div>
+    <div className="relative w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black select-none font-mono">
+      {/* Underlying Real Interactive Office Environment */}
+      <OfficeView
+        gameState={simulatedGameState}
+        onToggleDoor={handleToggleDoor}
+        onToggleLight={handleToggleLight}
+        onToggleMonitor={handleToggleMonitor}
+        onToggleMask={handleToggleMask}
+        onPlayScare={() => handlePlayScare('CAM_5')}
+        onPause={null}
+        isDoorBanging={isDoorBanging}
+        onOmrComplete={handleOmrComplete}
+      />
 
-      {/* Progress Dots */}
-      <div className="flex justify-center gap-2 my-2">
-        {steps.map((s, idx) => (
-          <button
-            key={idx}
-            onClick={() => setStep(idx)}
-            className={`h-2 rounded-full transition-all cursor-pointer ${
-              idx === step
-                ? 'w-8 bg-emerald-500'
-                : idx < step
-                ? 'w-3 bg-emerald-700'
-                : 'w-3 bg-neutral-800'
-            }`}
-            title={s.title}
-          />
-        ))}
-      </div>
+      {/* Underlying Real Interactive Camera Monitor */}
+      {monitorOpen && (
+        <CameraMonitor
+          gameState={simulatedGameState}
+          onSelectCam={handleSelectCam}
+          onToggleMonitor={handleToggleMonitor}
+          onPlayScare={handlePlayScare}
+        />
+      )}
 
-      {/* Main Interactive Training Sandbox Area */}
-      <div className="max-w-3xl w-full mx-auto my-auto bg-neutral-950 border-2 border-emerald-500/80 rounded-xl p-4 sm:p-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] space-y-4">
-        {/* Step Badge */}
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest bg-emerald-950/80 px-2.5 py-0.5 rounded border border-emerald-600/50">
-            {steps[step].category}
-          </span>
-          <h2 className="text-sm sm:text-base font-black text-white tracking-wide">
-            {steps[step].title}
-          </h2>
-        </div>
-
-        {/* STEP 0: BASICS */}
-        {step === 0 && (
-          <div className="space-y-4">
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Welcome to the security office of <strong className="text-white">IIT Chanthavila</strong>. Your shift runs from <strong className="text-emerald-400">12:00 AM to 6:00 AM</strong>. You must conserve battery power and protect your office against 4 animatronic threats.
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-              <div className="p-2.5 bg-neutral-900 border border-neutral-800 rounded">
-                <Lock size={18} className="mx-auto text-red-400 mb-1" />
-                <span className="text-[11px] font-bold text-white block">DOOR [D]</span>
-                <span className="text-[9px] text-gray-400">Blocks physical entry</span>
-              </div>
-              <div className="p-2.5 bg-neutral-900 border border-neutral-800 rounded">
-                <Lightbulb size={18} className="mx-auto text-yellow-400 mb-1" />
-                <span className="text-[11px] font-bold text-white block">LIGHT [L]</span>
-                <span className="text-[9px] text-gray-400">Illuminates blind spot</span>
-              </div>
-              <div className="p-2.5 bg-neutral-900 border border-neutral-800 rounded">
-                <span className="text-lg block">🎭</span>
-                <span className="text-[11px] font-bold text-white block">MASK [M]</span>
-                <span className="text-[9px] text-gray-400">Fools Johann</span>
-              </div>
-              <div className="p-2.5 bg-neutral-900 border border-neutral-800 rounded">
-                <Camera size={18} className="mx-auto text-emerald-400 mb-1" />
-                <span className="text-[11px] font-bold text-white block">CAMS [SPACE]</span>
-                <span className="text-[9px] text-gray-400">6 CCTV feeds</span>
-              </div>
+      {/* TOP FLOATING GUIDED INSTRUCTOR TRANSMISSION BOX (HUD OVERLAY) */}
+      <div className="fixed top-2 sm:top-4 inset-x-2 sm:inset-x-6 z-50 pointer-events-none flex justify-center">
+        <div className="bg-neutral-950/95 border-2 border-emerald-500 rounded-xl p-3 sm:p-4 max-w-2xl w-full text-gray-200 shadow-[0_0_40px_rgba(16,185,129,0.4)] backdrop-blur-md pointer-events-auto space-y-2">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between border-b border-emerald-900/70 pb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+              <Radio size={14} className="text-emerald-400 animate-pulse" />
+              <span className="text-[10px] sm:text-xs font-black text-emerald-400 tracking-widest uppercase">
+                SECURITY DISPATCH // GUIDED TRIAL NIGHT ({currentStep + 1}/9)
+              </span>
             </div>
 
-            {/* Interactive Control Drill */}
-            <div className="bg-neutral-900/80 border border-neutral-800 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs text-gray-300">
-                Try toggling the Door and Light to test audio and responsiveness:
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onFinish}
+                className="px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-400 hover:text-white text-[9px] sm:text-[10px] transition cursor-pointer flex items-center gap-1"
+                title="Exit Tutorial"
+              >
+                <X size={10} />
+                <span>EXIT</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Guide Message */}
+          <div className="space-y-1">
+            <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+              <Sparkles size={13} className="text-yellow-400 shrink-0" />
+              <span>{currentTutorial.title}</span>
+            </h3>
+            <p className="text-[11px] sm:text-xs text-emerald-200 leading-relaxed font-sans sm:font-mono">
+              {currentTutorial.guide}
+            </p>
+          </div>
+
+          {/* Objective Checklist Bar */}
+          <div className="bg-emerald-950/60 border border-emerald-800/80 rounded-lg px-2.5 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[10px] sm:text-xs">
+            <div className="flex items-center gap-2">
+              {currentTutorial.check ? (
+                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+              ) : (
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-yellow-400 animate-pulse shrink-0" />
+              )}
+              <span className={currentTutorial.check ? 'text-emerald-300 font-bold' : 'text-yellow-300 font-bold'}>
+                {currentTutorial.objective}
               </span>
+            </div>
+
+            {/* Next / Progress Button */}
+            {currentStep < 8 ? (
+              <button
+                onClick={() => {
+                  if (currentStep === 4 && monitorOpen) {
+                    setMonitorOpen(false);
+                  }
+                  setCurrentStep(prev => Math.min(8, prev + 1));
+                }}
+                className={`self-end sm:self-auto px-3 py-1 rounded text-[10px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                  currentTutorial.check
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                    : 'bg-neutral-800 hover:bg-neutral-700 text-gray-300 border border-neutral-700'
+                }`}
+              >
+                <span>{currentTutorial.check ? 'NEXT STEP' : 'SKIP STEP'}</span>
+                <ChevronRight size={12} />
+              </button>
+            ) : (
               <div className="flex gap-2">
                 <button
-                  onClick={handleToggleDoor}
-                  className={`px-3 py-1.5 rounded font-bold text-xs cursor-pointer flex items-center gap-1.5 transition active:scale-95 ${
-                    testDoorClosed ? 'bg-red-700 text-white' : 'bg-neutral-800 text-gray-300'
-                  }`}
+                  onClick={onStartNight1}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold transition flex items-center gap-1.5 shadow-[0_0_20px_rgba(239,68,68,0.8)] cursor-pointer active:scale-95"
                 >
-                  {testDoorClosed ? <Lock size={14} /> : <Unlock size={14} />}
-                  <span>DOOR: {testDoorClosed ? 'CLOSED' : 'OPEN'}</span>
+                  <Play size={12} className="fill-white" />
+                  <span>START NIGHT 1</span>
                 </button>
-
                 <button
-                  onClick={handleToggleLight}
-                  className={`px-3 py-1.5 rounded font-bold text-xs cursor-pointer flex items-center gap-1.5 transition active:scale-95 ${
-                    testLightOn ? 'bg-yellow-400 text-black' : 'bg-neutral-800 text-gray-300'
-                  }`}
+                  onClick={onFinish}
+                  className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-gray-300 rounded text-xs font-bold transition cursor-pointer"
                 >
-                  <Lightbulb size={14} />
-                  <span>LIGHT: {testLightOn ? 'ON' : 'OFF'}</span>
+                  <span>MENU</span>
                 </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 1: ABHISHEK & SCARE AUDIO */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="p-3 bg-red-950/40 border border-red-500/70 rounded-lg space-y-1.5">
-              <p className="text-xs sm:text-sm text-red-200 font-bold leading-relaxed">
-                ⚠️ CRITICAL UPDATE: Abhishek breaks in and kills even if the door is closed!
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Closing the blast door will NOT save you from Abhishek. Instead, when he approaches nearby (Corridor C or outside your doorway), you must click <strong className="text-yellow-300">SCARE AUDIO [A]</strong> to play iconic teacher voice quotes (&quot;Submit your DPP!&quot;, &quot;Change your attitude!&quot;, &quot;Where is your photocopy!&quot;) in his room to frighten him away to an adjacent room.
-              </p>
-              <p className="text-[11px] text-amber-300">
-                ⏳ Note: Scaring triggers a <strong className="text-white">10-second countdown</strong> before it can be used again!
-              </p>
-            </div>
-
-            {/* Interactive Test Scenario */}
-            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-lg flex flex-col sm:flex-row items-center gap-4">
-              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-neutral-700 bg-black flex items-center justify-center shrink-0">
-                <img
-                  src="./assets/images/ab-random-cutout.png"
-                  alt="Abhishek"
-                  className={`max-h-28 object-contain transition-all duration-300 ${
-                    testScareDone ? 'opacity-20 scale-75 -translate-x-8' : 'animate-pulse'
-                  }`}
-                />
-                {testScareDone && (
-                  <div className="absolute inset-0 bg-emerald-950/80 flex items-center justify-center text-center p-1 font-bold text-[10px] text-emerald-400">
-                    SCARED AWAY!
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div className="text-xs text-gray-300">
-                  {testScareDone ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1.5 justify-center sm:justify-start">
-                      <CheckCircle2 size={16} />
-                      Abhishek fled to an adjacent hallway!
-                    </span>
-                  ) : (
-                    <span className="text-red-400 font-bold animate-pulse">
-                      AB is stalking Corridor C outside the door! Press Scare below:
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleScareAbhishek}
-                  disabled={scareCooldown > 0}
-                  className={`w-full sm:w-auto px-5 py-2.5 rounded font-mono font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-lg ${
-                    scareCooldown > 0
-                      ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed'
-                      : 'bg-red-700 hover:bg-red-600 text-white border border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.7)] animate-pulse'
-                  }`}
-                >
-                  <Volume2 size={16} className={scareCooldown > 0 ? 'text-neutral-500' : 'text-yellow-300'} />
-                  <span>
-                    {scareCooldown > 0 ? `RECHARGING (${scareCooldown}s)` : '🔊 SCARE ABHISHEK [A]'}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: JOHANN & MASK */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div className="p-3 bg-purple-950/40 border border-purple-500/70 rounded-lg space-y-1.5">
-              <p className="text-xs sm:text-sm text-purple-200 font-bold leading-relaxed">
-                👤 NEW ENEMY: Johann appears looking through the closed door window!
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                After <strong className="text-white">2 seconds</strong>, Johann bangs loudly on the door. After <strong className="text-red-400">5 seconds</strong>, he breaks in and kills you!
-              </p>
-              <p className="text-xs text-yellow-300 leading-relaxed">
-                🛡️ Defense: Put on your <strong className="text-white">MASK [M]</strong>. When Johann sees the mask, he is fooled and walks away!
-              </p>
-            </div>
-
-            {/* Interactive Test Scenario */}
-            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-lg flex flex-col sm:flex-row items-center gap-4">
-              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0">
-                <img
-                  src="./assets/images/johann-3.png"
-                  alt="Johann"
-                  className={`max-h-28 object-contain transition-all duration-300 ${
-                    testMaskOn ? 'opacity-10 scale-50' : 'animate-pulse'
-                  }`}
-                />
-                {testMaskOn && (
-                  <div className="absolute inset-0 bg-emerald-950/80 flex items-center justify-center text-center p-1 font-bold text-[10px] text-emerald-400">
-                    JOHANN FOOLED! RETREATED!
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div className="text-xs text-gray-300">
-                  {testMaskOn ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1.5 justify-center sm:justify-start">
-                      <CheckCircle2 size={16} />
-                      Mask equipped! Johann saw the disguise and left.
-                    </span>
-                  ) : (
-                    <span className="text-purple-300 font-bold animate-pulse">
-                      Johann is staring through the door window! Wear mask:
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleToggleMask}
-                  className={`w-full sm:w-auto px-5 py-2.5 rounded font-mono font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-lg ${
-                    testMaskOn
-                      ? 'bg-yellow-500 text-black border border-yellow-300 shadow-[0_0_20px_rgba(234,179,8,0.8)]'
-                      : 'bg-neutral-800 hover:bg-neutral-700 text-gray-200 border border-neutral-600'
-                  }`}
-                >
-                  <span className="text-base">🎭</span>
-                  <span>{testMaskOn ? 'REMOVE MASK [M]' : 'WEAR MASK [M]'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Mask Overlay Preview */}
-            {testMaskOn && (
-              <div className="relative rounded-lg overflow-hidden border border-yellow-600/70 p-2 bg-neutral-950 text-center text-xs text-yellow-300">
-                <span>🎭 Fullscreen mask overlay is now active over your vision!</span>
               </div>
             )}
           </div>
-        )}
-
-        {/* STEP 3: AADESH & LIGHT AFTER DOOR */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <div className="p-3 bg-yellow-950/40 border border-yellow-500/70 rounded-lg space-y-1.5">
-              <p className="text-xs sm:text-sm text-yellow-200 font-bold leading-relaxed">
-                👁️ AADESH MECHANIC: Only goes away if you turn on light AFTER closing door!
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Aadesh creeps into your doorway blind spot. Simply closing the door will <strong className="text-red-400">NOT</strong> make him leave! You must:
-              </p>
-              <ol className="list-decimal list-inside text-xs text-yellow-300 space-y-0.5">
-                <li><strong className="text-white">1. Close the Blast Door [D]</strong></li>
-                <li><strong className="text-white">2. Turn on the Hallway Light [L]</strong> while the door is closed!</li>
-              </ol>
-              <p className="text-[11px] text-gray-400">
-                The bright light behind the closed blast door startles Aadesh, making him bang the door and retreat to the stairs.
-              </p>
-            </div>
-
-            {/* Interactive Test Scenario */}
-            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-lg flex flex-col sm:flex-row items-center gap-4">
-              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0">
-                <img
-                  src="./assets/images/aadesh-jumpscare-cutout.png"
-                  alt="Aadesh"
-                  className={`max-h-28 object-contain transition-all duration-300 ${
-                    testAadeshRepelled ? 'opacity-10 scale-50' : 'animate-pulse'
-                  }`}
-                />
-                {testAadeshRepelled && (
-                  <div className="absolute inset-0 bg-emerald-950/80 flex items-center justify-center text-center p-1 font-bold text-[10px] text-emerald-400">
-                    AADESH REPELLED!
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div className="text-xs text-gray-300">
-                  {testAadeshRepelled ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1.5 justify-center sm:justify-start">
-                      <CheckCircle2 size={16} />
-                      Perfect! Light behind closed door repelled Aadesh!
-                    </span>
-                  ) : (
-                    <span className="text-yellow-400 font-bold animate-pulse">
-                      Aadesh is in your blind spot! Step 1: Close Door [D] → Step 2: Turn on Light [L]:
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleToggleDoor}
-                    className={`px-3.5 py-2 rounded font-mono font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                      testDoorClosed ? 'bg-red-700 text-white' : 'bg-neutral-800 text-gray-300 border border-neutral-700'
-                    }`}
-                  >
-                    {testDoorClosed ? <Lock size={14} /> : <Unlock size={14} />}
-                    <span>1. DOOR: {testDoorClosed ? 'CLOSED' : 'OPEN'}</span>
-                  </button>
-
-                  <button
-                    onClick={handleToggleLight}
-                    className={`px-3.5 py-2 rounded font-mono font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                      testLightOn ? 'bg-yellow-400 text-black' : 'bg-neutral-800 text-gray-300 border border-neutral-700'
-                    }`}
-                  >
-                    <Lightbulb size={14} />
-                    <span>2. LIGHT: {testLightOn ? 'ON' : 'OFF'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: DIPU */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <div className="p-3 bg-orange-950/40 border border-orange-500/70 rounded-lg space-y-1.5">
-              <p className="text-xs sm:text-sm text-orange-200 font-bold leading-relaxed">
-                ⚡ DIPU: The High-Speed Supply Hall Sprinter
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Dipu rests in <strong className="text-white">CAM 3 (Supply Hall)</strong>. Watch CAM 3 regularly to stall him. If unwatched, he advances stages and sprints down the corridor (loud rapid running footsteps!).
-              </p>
-              <p className="text-xs text-red-300">
-                You have ~2.6 seconds to slam the door [D] before he collides with your doorway!
-              </p>
-            </div>
-
-            {/* Interactive Sprint Defense */}
-            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-lg flex flex-col sm:flex-row items-center gap-4">
-              <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-neutral-700 bg-neutral-950 flex items-center justify-center shrink-0">
-                <img
-                  src="./assets/images/dipu-jumpscare-cutout.png"
-                  alt="Dipu"
-                  className={`max-h-28 object-contain transition-all duration-300 ${
-                    testDipuRepelled ? 'opacity-20 scale-75' : 'animate-bounce'
-                  }`}
-                />
-                {testDipuRepelled && (
-                  <div className="absolute inset-0 bg-emerald-950/80 flex items-center justify-center text-center p-1 font-bold text-[10px] text-emerald-400">
-                    BLOCKED BY DOOR!
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div className="text-xs text-gray-300">
-                  {testDipuRepelled ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1.5 justify-center sm:justify-start">
-                      <CheckCircle2 size={16} />
-                      Loud Bang! Dipu slammed into the closed door and retreated to CAM 3!
-                    </span>
-                  ) : (
-                    <span className="text-orange-400 font-bold animate-pulse">
-                      DIPU IS SPRINTING DOWN THE HALL! Slam door shut!
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleSlamDipu}
-                  className="px-5 py-2.5 bg-red-700 hover:bg-red-600 text-white font-mono font-bold text-xs rounded flex items-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.8)] active:scale-95"
-                >
-                  <Lock size={16} />
-                  <span>SLAM DOOR SHUT [D]</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: OMR TERMINAL */}
-        {step === 5 && (
-          <div className="space-y-4">
-            <div className="p-3 bg-cyan-950/40 border border-cyan-500/70 rounded-lg space-y-1.5">
-              <p className="text-xs sm:text-sm text-cyan-200 font-bold leading-relaxed">
-                💻 DESK MONITOR // OMR UPLOAD SYSTEM
-              </p>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                Located on your office counter. Uploading OMR sheets to Ligin skips <strong className="text-emerald-300">1 entire hour forward</strong> toward 6:00 AM!
-              </p>
-              <ul className="list-disc list-inside text-xs text-gray-300 space-y-1">
-                <li><strong className="text-emerald-400">0% Power Drain:</strong> Uploading does NOT consume power!</li>
-                <li><strong className="text-yellow-300">Cooldown:</strong> 15 seconds cooldown between uploads.</li>
-                <li><strong className="text-red-400">Quota:</strong> Nights 1 & 2 need 2 uploads/hour; Night 3 needs 3; Nights 4 & 5 need 4.</li>
-              </ul>
-            </div>
-
-            {/* Interactive Upload Simulation */}
-            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-lg space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-300 font-bold">LIGIN OMR TRANSMISSION:</span>
-                <span className="text-cyan-400 font-mono font-bold">{testOmrProgress}%</span>
-              </div>
-
-              <div className="w-full bg-neutral-950 border border-neutral-700 h-3 rounded-full overflow-hidden">
-                <div
-                  className="bg-cyan-500 h-full transition-all duration-300"
-                  style={{ width: `${testOmrProgress}%` }}
-                />
-              </div>
-
-              {testOmrDone ? (
-                <div className="text-emerald-400 text-xs font-bold flex items-center gap-1.5">
-                  <CheckCircle2 size={16} />
-                  <span>UPLOAD COMPLETE! +1 HOUR SKIPPED FORWARD!</span>
-                </div>
-              ) : (
-                <button
-                  onClick={handleStartOmr}
-                  disabled={testOmrUploading}
-                  className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 disabled:bg-neutral-800 text-white font-bold text-xs rounded flex items-center gap-2 cursor-pointer active:scale-95"
-                >
-                  <Upload size={14} />
-                  <span>{testOmrUploading ? 'TRANSMITTING...' : 'START TEST UPLOAD'}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 6: READY */}
-        {step === 6 && (
-          <div className="space-y-5 text-center py-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
-              <Shield size={32} />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-black text-white uppercase tracking-wider">
-                TRAINING PROTOCOL COMPLETED
-              </h3>
-              <p className="text-xs text-gray-300 max-w-md mx-auto leading-relaxed">
-                You know how to use the cameras, blast door, hallway light, security mask, scare audio, and OMR terminal.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 max-w-sm mx-auto">
-              <button
-                onClick={onStartNight1}
-                className="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-xs rounded tracking-wider uppercase flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.7)] cursor-pointer active:scale-95"
-              >
-                <Play size={16} />
-                <span>START NIGHT 1</span>
-              </button>
-
-              <button
-                onClick={onFinish}
-                className="flex-1 py-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-300 font-bold text-xs rounded tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              >
-                <Home size={16} />
-                <span>MAIN MENU</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Footer Navigation Buttons */}
-        <div className="flex justify-between items-center pt-3 border-t border-neutral-800">
-          <button
-            onClick={() => setStep(prev => Math.max(0, prev - 1))}
-            disabled={step === 0}
-            className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 cursor-pointer ${
-              step === 0 ? 'opacity-30 cursor-not-allowed' : 'bg-neutral-900 hover:bg-neutral-800 text-gray-300'
-            }`}
-          >
-            <ArrowLeft size={14} />
-            <span>PREV</span>
-          </button>
-
-          <span className="text-[10px] text-gray-500 font-mono">
-            {step + 1} / {steps.length}
-          </span>
-
-          {step < steps.length - 1 ? (
-            <button
-              onClick={() => setStep(prev => Math.min(steps.length - 1, prev + 1))}
-              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow active:scale-95"
-            >
-              <span>NEXT</span>
-              <ArrowRight size={14} />
-            </button>
-          ) : (
-            <button
-              onClick={onStartNight1}
-              className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow active:scale-95"
-            >
-              <span>START NIGHT 1</span>
-              <Play size={14} />
-            </button>
-          )}
         </div>
       </div>
     </div>

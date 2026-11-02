@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
@@ -384,6 +384,28 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
               {/* LEFT COLUMN: Clear, Detailed Guide */}
               <div className="flex-1 p-4 sm:p-5 space-y-4 sm:space-y-5 overflow-y-auto text-xs leading-relaxed">
                 
+                {/* Interactive Tutorial Gameplay Callout Banner */}
+                <div className="bg-emerald-950/60 border border-emerald-500/80 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+                  <div className="space-y-0.5 text-center sm:text-left">
+                    <div className="text-emerald-300 font-bold flex items-center gap-1.5 justify-center sm:justify-start">
+                      <Sparkles size={14} className="text-yellow-400" />
+                      <span>INTERACTIVE TUTORIAL GAMEPLAY</span>
+                    </div>
+                    <p className="text-[10.5px] text-gray-300">
+                      Step into a guided sample night shift with real-time instructions for cameras, mask, scare audio, and OMR!
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      closeHowToPlay();
+                      if (onStartTutorial) onStartTutorial();
+                    }}
+                    className="shrink-0 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-xs font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.6)] cursor-pointer active:scale-95"
+                  >
+                    <Play size={13} className="fill-white" />
+                    <span>START TUTORIAL</span>
+                  </button>
+                </div>
                 {/* Section 1: Objective */}
                 <div className="space-y-1.5 border-l-2 border-emerald-500 pl-3">
                   <div className="flex items-center gap-1.5 text-emerald-400 font-bold uppercase tracking-wider text-xs">

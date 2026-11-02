@@ -36,7 +36,7 @@ export default function JumpscareOverlay({ jumpscareWho, onJumpscareEnd }) {
     imageSrc = './assets/images/aadesh-jumpscare.jpg';
     title = 'AADESH ATTACKED';
   } else if (jumpscareWho === 'johann') {
-    imageSrc = './assets/images/johann-2.png';
+    imageSrc = './assets/images/johann-jumpscare.jpg';
     title = 'JOHANN ATTACKED';
   }
 
