@@ -6,6 +6,7 @@ import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 import DeskFan from './DeskFan';
 import DeskMonitor from './DeskMonitor';
 import OmrUploadModal from './OmrUploadModal';
+import WirePuzzleModal from './WirePuzzleModal';
 
 export default function OfficeView({
   gameState,
@@ -17,8 +18,11 @@ export default function OfficeView({
   onPause,
   isDoorBanging,
   onOmrComplete,
+  scareSubtitle,
+  onActivateGenerator,
 }) {
   const [isOmrModalOpen, setIsOmrModalOpen] = useState(false);
+  const [isWirePuzzleOpen, setIsWirePuzzleOpen] = useState(false);
   const [panX, setPanX] = useState(0);
   const [isPortrait, setIsPortrait] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
@@ -278,6 +282,97 @@ export default function OfficeView({
             <div className="bg-red-600/90 text-white font-mono font-black text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border-2 border-yellow-300 shadow-[0_0_30px_rgba(220,38,38,1)] flex items-center gap-2">
               <ShieldAlert size={18} className="text-yellow-300 animate-spin" />
               <span>BANG! BANG! BANG!</span>
+            </div>
+          </div>
+        )}
+
+
+        {/* Auxiliary Power Generator (Night 3+) */}
+        {(gameState.isGeneratorAvailable || gameState.night >= 3 || gameState.night === 'TUTORIAL') && (
+          <div
+            onClick={() => {
+              if (!gameState.isGeneratorUsed) {
+                setIsWirePuzzleOpen(true);
+              }
+            }}
+            className={`absolute bottom-[46%] sm:bottom-[47%] md:bottom-[47.5%] left-[1.2%] sm:left-[1.8%] md:left-[2.2%] pointer-events-auto w-20 h-26 sm:w-26 sm:h-30 md:w-32 md:h-36 rounded-xl border-2 transition active:scale-95 flex flex-col justify-between p-1.5 sm:p-2 cursor-pointer shadow-2xl ${
+              gameState.isBlackout ? 'z-36' : 'z-18'
+            } ${
+              gameState.isGeneratorUsed
+                ? 'bg-neutral-950/90 border-neutral-800 opacity-60 cursor-not-allowed'
+                : gameState.isBlackout || gameState.power < 20
+                ? 'bg-yellow-950/90 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.9)] animate-pulse'
+                : 'bg-neutral-900/90 border-neutral-700 hover:border-yellow-500 shadow-[0_0_15px_rgba(0,0,0,0.8)]'
+            }`}
+            title={
+              gameState.isGeneratorUsed
+                ? 'Generator Fuel Spent'
+                : 'Auxiliary Power Generator (Click to Rewire & Restore 10-15% Power)'
+            }
+          >
+            {/* Generator Header with Hazard Stripes */}
+            <div className="h-2 rounded bg-[repeating-linear-gradient(45deg,#ca8a04,#ca8a04_6px,#171717_6px,#171717_12px)] opacity-80" />
+
+            {/* Generator Core & Dial */}
+            <div className="flex flex-col items-center justify-center my-auto space-y-1">
+              <div className="flex items-center gap-1">
+                <Zap
+                  size={16}
+                  className={
+                    gameState.isGeneratorUsed
+                      ? 'text-gray-600'
+                      : gameState.isBlackout || gameState.power < 20
+                      ? 'text-yellow-400 animate-spin'
+                      : 'text-yellow-500 animate-pulse'
+                  }
+                />
+                <span className="text-[8px] sm:text-[9.5px] font-black font-mono tracking-widest text-white">
+                  GEN-01
+                </span>
+              </div>
+
+              {/* Status LED */}
+              <div className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 rounded border border-neutral-800">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    gameState.isGeneratorUsed
+                      ? 'bg-red-900'
+                      : gameState.isBlackout || gameState.power < 20
+                      ? 'bg-yellow-400 animate-ping'
+                      : 'bg-emerald-400 animate-pulse'
+                  }`}
+                />
+                <span
+                  className={`text-[6.5px] sm:text-[7.5px] font-bold font-mono tracking-tight ${
+                    gameState.isGeneratorUsed
+                      ? 'text-neutral-500'
+                      : gameState.isBlackout || gameState.power < 20
+                      ? 'text-yellow-300 font-black'
+                      : 'text-emerald-400'
+                  }`}
+                >
+                  {gameState.isGeneratorUsed
+                    ? 'DEPLETED'
+                    : gameState.isBlackout
+                    ? 'EMERGENCY!'
+                    : 'READY'}
+                </span>
+              </div>
+            </div>
+
+            {/* Sublabel */}
+            <div className="text-center font-mono text-[6.5px] sm:text-[7.5px] text-gray-400 uppercase tracking-tighter border-t border-neutral-800 pt-0.5">
+              {gameState.isGeneratorUsed ? 'OFFLINE' : '+10-15% AUX'}
+            </div>
+          </div>
+        )}
+
+        {/* Floating Abhishek Scare Subtitle in Office */}
+        {scareSubtitle && (
+          <div className="absolute top-[38%] right-[11%] sm:right-[13%] z-35 pointer-events-none animate-bounce">
+            <div className="bg-red-950/95 border-2 border-red-500 text-yellow-300 font-mono text-[9px] sm:text-xs font-bold px-3 py-1.5 rounded-lg shadow-[0_0_25px_rgba(239,68,68,0.95)] flex items-center gap-1.5 max-w-xs">
+              <Volume2 size={15} className="text-yellow-300 shrink-0" />
+              <span>&ldquo;{scareSubtitle}&rdquo;</span>
             </div>
           </div>
         )}

@@ -51,6 +51,11 @@ class SoundManager {
       this.uploadSuccessAudio = new Audio('./assets/audio/upload-success.mp3');
       this.uploadSuccessAudio.preload = 'auto';
 
+      this.scareMetadata = [
+        { src: './assets/audio/change-your-attitude-children.mp3', subtitle: 'Change your attitude children!' },
+        { src: './assets/audio/submit-your-dpp.mp3', subtitle: 'Submit your dpp!' },
+        { src: './assets/audio/where-is-your-photocopy.mp3', subtitle: 'Where is your photocopy?' }
+      ];
       const scareClips = [
         './assets/audio/change-your-attitude-children.mp3',
         './assets/audio/submit-your-dpp.mp3',
@@ -87,7 +92,8 @@ class SoundManager {
   // --- ABHISHEK SCARE AWAY AUDIO (TEACHER QUOTES) ---
   playAbhishekScare() {
     this.initContext();
-    if (this.isMuted) return null;
+    const fallbackMeta = this.scareMetadata ? this.scareMetadata[Math.floor(Math.random() * this.scareMetadata.length)] : { src: null, subtitle: 'Where is your photocopy?' };
+    if (this.isMuted) return fallbackMeta;
 
     try {
       if (this.currentScareAudio) {
@@ -98,20 +104,79 @@ class SoundManager {
       if (this.scareAudios && this.scareAudios.length > 0) {
         const idx = Math.floor(Math.random() * this.scareAudios.length);
         const audio = this.scareAudios[idx];
+        const meta = (this.scareMetadata && this.scareMetadata[idx]) || fallbackMeta;
         audio.currentTime = 0;
         audio.volume = this.isMuted ? 0 : 1;
         this.currentScareAudio = audio;
         const p = audio.play();
         if (p) p.catch(() => {});
-        return audio.src;
+        return meta;
       }
     } catch (e) {
       console.warn('Scare audio error:', e);
     }
-    return null;
+    return fallbackMeta;
   }
 
-  // --- MASK FLIP SFX ---
+  // --- WIRE CONNECT SFX (ELECTRICAL SNAP) ---
+  playWireConnect() {
+    this.initContext();
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } catch (e) {
+      console.warn('Wire connect SFX error:', e);
+    }
+  }
+
+  // --- GENERATOR REV-UP SFX ---
+  playGeneratorRevUp() {
+    this.initContext();
+    if (!this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const motorOsc = this.ctx.createOscillator();
+      const motorGain = this.ctx.createGain();
+      motorOsc.type = 'sawtooth';
+      motorOsc.frequency.setValueAtTime(55, now);
+      motorOsc.frequency.exponentialRampToValueAtTime(140, now + 0.8);
+      motorGain.gain.setValueAtTime(0.01, now);
+      motorGain.gain.linearRampToValueAtTime(0.35, now + 0.4);
+      motorGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      motorOsc.connect(motorGain);
+      motorGain.connect(this.masterGain);
+      motorOsc.start(now);
+      motorOsc.stop(now + 1.2);
+
+      const chimeOsc = this.ctx.createOscillator();
+      const chimeGain = this.ctx.createGain();
+      chimeOsc.type = 'sine';
+      chimeOsc.frequency.setValueAtTime(523.25, now + 0.3);
+      chimeOsc.frequency.setValueAtTime(659.25, now + 0.5);
+      chimeOsc.frequency.setValueAtTime(783.99, now + 0.7);
+      chimeGain.gain.setValueAtTime(0.01, now + 0.3);
+      chimeGain.gain.linearRampToValueAtTime(0.3, now + 0.5);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      chimeOsc.connect(chimeGain);
+      chimeGain.connect(this.masterGain);
+      chimeOsc.start(now + 0.3);
+      chimeOsc.stop(now + 1.2);
+    } catch (e) {
+      console.warn('Generator rev-up SFX error:', e);
+    }
+  }
+
   playMaskSound(isWearing) {
     this.initContext();
     if (!this.ctx || this.isMuted) return;

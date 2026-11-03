@@ -32,7 +32,28 @@ export default function App() {
   const [jumpscareTarget, setJumpscareTarget] = useState(null);
   const [isDoorBanging, setIsDoorBanging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [cameraGlitch, setCameraGlitch] = useState(false);
+  const [scareSubtitle, setScareSubtitle] = useState(null);
+  const [devToastMessage, setDevToastMessage] = useState(null);
+
   const customConfigRef = useRef(null);
+
+  // Developer Mode (window.isDeveloper = true) Console Listener
+  useEffect(() => {
+    const handleDevMode = (e) => {
+      if (e.detail?.isDeveloper) {
+        setUnlockedNight(6);
+        setDevToastMessage(e.detail.message || 'Hello Pinky/Dip-u. Hope you are not someone else');
+        setTimeout(() => setDevToastMessage(null), 6000);
+      }
+    };
+    window.addEventListener('dev-mode-change', handleDevMode);
+    if (window.isDeveloper) {
+      setUnlockedNight(6);
+    }
+    return () => window.removeEventListener('dev-mode-change', handleDevMode);
+  }, []);
+
 
   // Keep references updated for stable callbacks
   const currentNightRef = useRef(currentNight);
@@ -149,10 +170,24 @@ export default function App() {
         break;
 
       case 'MOVEMENT':
+        if (event.animatronic && ['aadesh', 'johann', 'ab'].includes(event.animatronic)) {
+          setCameraGlitch(true);
+          soundManager.playStaticBurst(0.08, 0.18);
+          setTimeout(() => setCameraGlitch(false), 1000);
+        }
+        soundManager.playFootstep(false);
+        break;
+
       case 'JOHANN_APPEARED':
       case 'JOHANN_RETREAT':
       case 'AB_SCARED':
+        setCameraGlitch(true);
+        setTimeout(() => setCameraGlitch(false), 1000);
         soundManager.playFootstep(false);
+        break;
+
+      case 'GENERATOR_ACTIVATED':
+        soundManager.playGeneratorRevUp();
         break;
 
       case 'DIPU_SPRINT':
@@ -291,11 +326,21 @@ export default function App() {
     if (!gameState || gameState.isBlackout || isPaused) return null;
     const res = gameState.playScareAudio(targetCam, handleGameEvent);
     if (res.success) {
-      soundManager.playAbhishekScare();
+      const played = soundManager.playAbhishekScare();
+      if (played && played.subtitle) {
+        setScareSubtitle(played.subtitle);
+        setTimeout(() => setScareSubtitle(null), 3500);
+      }
     }
     setGameState(refreshGameState(gameState));
     return res;
   }, [gameState, refreshGameState, handleGameEvent, isPaused]);
+
+  const handleActivateGenerator = useCallback((powerAmount) => {
+    if (!gameState) return;
+    gameState.activateGenerator(handleGameEvent);
+    setGameState(refreshGameState(gameState));
+  }, [gameState, refreshGameState, handleGameEvent]);
 
   const handleSelectCam = useCallback((camId) => {
     if (!gameState || isPaused) return;
@@ -397,6 +442,8 @@ export default function App() {
             onPause={handleTogglePause}
             isDoorBanging={isDoorBanging}
             onOmrComplete={handleOmrComplete}
+            scareSubtitle={scareSubtitle}
+            onActivateGenerator={handleActivateGenerator}
           />
 
           {gameState.isMonitorOpen && (
@@ -405,6 +452,8 @@ export default function App() {
               onSelectCam={handleSelectCam}
               onToggleMonitor={handleToggleMonitor}
               onPlayScare={handlePlayScare}
+              cameraGlitch={cameraGlitch}
+              scareSubtitle={scareSubtitle}
             />
           )}
 
@@ -442,6 +491,29 @@ export default function App() {
           onNextNight={handleNextNight}
           onMainMenu={handleMainMenu}
         />
+      )}
+
+      {/* Developer Mode Toast Notification */}
+      {devToastMessage && (
+        <div className="fixed top-4 inset-x-4 sm:inset-x-auto sm:right-6 z-70 pointer-events-auto animate-bounce">
+          <div className="bg-emerald-950/95 border-2 border-emerald-400 text-emerald-200 px-4 py-3 rounded-xl shadow-[0_0_35px_rgba(16,185,129,0.9)] flex items-center gap-3 font-mono text-xs sm:text-sm">
+            <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <div>
+              <div className="font-black text-emerald-300 uppercase tracking-widest text-[10px] sm:text-xs">
+                DEV OVERRIDE // ALL NIGHTS UNLOCKED
+              </div>
+              <div className="font-bold text-white">
+                &ldquo;{devToastMessage}&rdquo;
+              </div>
+            </div>
+            <button
+              onClick={() => setDevToastMessage(null)}
+              className="text-emerald-400 hover:text-white p-1 rounded hover:bg-emerald-900/60 ml-2 cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );

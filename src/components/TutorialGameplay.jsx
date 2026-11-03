@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Shield, Play, Home, CheckCircle2, Volume2, Lock, Unlock, Lightbulb, Camera, Upload, AlertTriangle, Radio, Sparkles, ChevronRight, X } from 'lucide-react';
+import { BookOpen, Shield, Play, Home, CheckCircle2, Volume2, Lock, Unlock, Lightbulb, Camera, Upload, AlertTriangle, Radio, Sparkles, ChevronRight, X } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import OfficeView from './OfficeView';
 import CameraMonitor from './CameraMonitor';
+import RulesModal from './RulesModal';
 import { CAMERAS } from '../game/gameEngine';
 
 export default function TutorialGameplay({ onFinish, onStartNight1 }) {
@@ -28,6 +29,8 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
   const [time, setTime] = useState(12); // starts 12 AM
   const [isDoorBanging, setIsDoorBanging] = useState(false);
   const [hasLookedAround, setHasLookedAround] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [scareSubtitle, setScareSubtitle] = useState(null);
 
   // Enemy states for guided sample night
   const [enemyLocations, setEnemyLocations] = useState({
@@ -67,6 +70,9 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
     isOmrUploading: false,
     omrCooldown: 0,
     omrQuota: 1,
+    isGeneratorAvailable: true,
+    isGeneratorUsed: false,
+    activateGenerator: () => 12,
     ab: { location: enemyLocations.ab, atDoorTimer: 0, hasBangedDoor: false },
     dipu: { stage: enemyLocations.dipu, sprintTimer: 0, stallTimer: 0 },
     aadesh: { location: enemyLocations.aadesh, atBlindSpotTimer: 0, wasDoorClosedWhilePresent: false },
@@ -270,7 +276,9 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
   // Handle Scare Audio
   const handlePlayScare = useCallback((targetCam = null) => {
     if (scareCooldown > 0) return null;
-    soundManager.playAbhishekScare();
+    const played = soundManager.playAbhishekScare();
+    setScareSubtitle(played?.subtitle || "Where is your photocopy?");
+    setTimeout(() => setScareSubtitle(null), 3000);
     setScareCooldown(10);
     setStepActions(prev => ({ ...prev, scaredAb: true }));
 
@@ -424,6 +432,7 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
         onPause={null}
         isDoorBanging={isDoorBanging}
         onOmrComplete={handleOmrComplete}
+        scareSubtitle={scareSubtitle}
       />
 
       {/* Underlying Real Interactive Camera Monitor */}
@@ -450,6 +459,14 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowRulesModal(true)}
+                className="px-2 sm:px-2.5 py-0.5 rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/80 text-emerald-300 hover:text-white text-[9px] sm:text-[10px] font-bold transition cursor-pointer flex items-center gap-1 active:scale-95 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                title="View Rules and Security Protocol Manual"
+              >
+                <BookOpen size={11} className="text-emerald-400" />
+                <span>VIEW RULES</span>
+              </button>
               <button
                 onClick={onFinish}
                 className="px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-gray-400 hover:text-white text-[9px] sm:text-[10px] transition cursor-pointer flex items-center gap-1"
@@ -523,6 +540,10 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
           </div>
         </div>
       </div>
+      {/* SECURITY PROTOCOL MANUAL / VIEW RULES MODAL */}
+      {showRulesModal && (
+        <RulesModal onClose={() => setShowRulesModal(false)} />
+      )}
     </div>
   );
 }

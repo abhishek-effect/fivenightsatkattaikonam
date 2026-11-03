@@ -8,6 +8,8 @@ export default function CameraMonitor({
   onSelectCam,
   onToggleMonitor,
   onPlayScare,
+  cameraGlitch,
+  scareSubtitle,
 }) {
   const [switchingStatic, setSwitchingStatic] = useState(false);
   const [isMapMinimized, setIsMapMinimized] = useState(false);
@@ -231,6 +233,32 @@ export default function CameraMonitor({
             </div>
           </div>
         ))}
+
+
+        {/* Enemy Movement Camera Glitch (1-second static & interference burst) */}
+        {cameraGlitch && (
+          <div className="absolute inset-0 z-45 pointer-events-none overflow-hidden animate-pulse">
+            <div className="absolute inset-0 bg-neutral-900/90 static-fuzz opacity-90 mix-blend-screen" />
+            <div className="absolute top-[25%] inset-x-0 h-6 bg-cyan-400/30 glitch-slice-bar mix-blend-screen" />
+            <div className="absolute top-[60%] inset-x-0 h-8 bg-red-600/40 glitch-slice-bar mix-blend-color-dodge" style={{ animationDelay: '0.15s' }} />
+            <div className="absolute top-[75%] inset-x-0 h-4 bg-yellow-300/30 glitch-slice-bar mix-blend-screen" style={{ animationDelay: '0.3s' }} />
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+              <span className="bg-black/80 border border-red-500/80 px-3 py-1 rounded text-red-500 font-mono text-xs sm:text-sm font-black tracking-widest uppercase shadow-[0_0_20px_rgba(239,68,68,0.8)]">
+                ● MOTION INTERFERENCE DETECTED
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Abhishek Scare Audio Subtitle in Cameras */}
+        {scareSubtitle && (
+          <div className="absolute top-28 inset-x-0 z-35 flex justify-center pointer-events-none animate-bounce">
+            <div className="bg-red-950/95 border-2 border-red-500 text-yellow-300 px-4 py-2 rounded-lg font-mono text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(239,68,68,0.95)] flex items-center gap-2">
+              <Volume2 size={16} className="text-yellow-400 shrink-0" />
+              <span>&ldquo;{scareSubtitle}&rdquo;</span>
+            </div>
+          </div>
+        )}
 
         {/* Dipu Missing Alarm on CAM 3 */}
         {gameState.currentCam === 'CAM_3' && gameState.dipu.stage === 2 && (

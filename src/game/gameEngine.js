@@ -9,6 +9,60 @@ export const CAMERAS = [
   { id: 'CAM_6', name: 'Balcony', sub: 'Terrace', image: './assets/images/cam-balcony.jpg', x: 85, y: 75 },
 ];
 
+
+export const HOURLY_AI_SCHEDULE = {
+  1: [
+    // 12 AM: Peaceful orientation (all 0)
+    { hour: 0, aadesh: 0, dipu: 0, ab: 0, johann: 0 },
+    // 1 AM: Aadesh awakens (Bonnie-like roaming starts)
+    { hour: 1, aadesh: 1, dipu: 0, ab: 0, johann: 0 },
+    // 2 AM: Aadesh picks up pace
+    { hour: 2, aadesh: 2, dipu: 0, ab: 0, johann: 0 },
+    // 3 AM: Dipu stirs in CAM 3 (Foxy begins stirring)
+    { hour: 3, aadesh: 3, dipu: 1, ab: 1, johann: 0 },
+    // 4 AM: Dipu and Aadesh active
+    { hour: 4, aadesh: 4, dipu: 2, ab: 1, johann: 0 },
+    // 5 AM: Final hour pressure
+    { hour: 5, aadesh: 4, dipu: 3, ab: 2, johann: 0 },
+  ],
+  2: [
+    // Night 2: Johann awakens! (Balcony lurker joins)
+    { hour: 0, aadesh: 2, dipu: 1, ab: 0, johann: 1 },
+    { hour: 1, aadesh: 3, dipu: 1, ab: 1, johann: 2 },
+    { hour: 2, aadesh: 4, dipu: 2, ab: 1, johann: 2 },
+    { hour: 3, aadesh: 5, dipu: 3, ab: 2, johann: 3 },
+    { hour: 4, aadesh: 5, dipu: 4, ab: 3, johann: 4 },
+    { hour: 5, aadesh: 6, dipu: 4, ab: 4, johann: 5 },
+  ],
+  3: [
+    // Night 3: Full escalation! Abhishek door breaker active, generator unlocked
+    { hour: 0, aadesh: 4, dipu: 3, ab: 3, johann: 3 },
+    { hour: 1, aadesh: 5, dipu: 3, ab: 4, johann: 4 },
+    { hour: 2, aadesh: 6, dipu: 4, ab: 5, johann: 3 }, // Johann brief lull
+    { hour: 3, aadesh: 7, dipu: 5, ab: 6, johann: 5 },
+    { hour: 4, aadesh: 8, dipu: 6, ab: 7, johann: 6 },
+    { hour: 5, aadesh: 9, dipu: 7, ab: 8, johann: 7 },
+  ],
+  4: [
+    // Night 4: Lockdown
+    { hour: 0, aadesh: 7, dipu: 5, ab: 6, johann: 5 },
+    { hour: 1, aadesh: 8, dipu: 6, ab: 7, johann: 6 },
+    { hour: 2, aadesh: 9, dipu: 7, ab: 8, johann: 6 }, // slight lull
+    { hour: 3, aadesh: 10, dipu: 8, ab: 9, johann: 8 },
+    { hour: 4, aadesh: 12, dipu: 9, ab: 11, johann: 10 },
+    { hour: 5, aadesh: 13, dipu: 11, ab: 12, johann: 11 },
+  ],
+  5: [
+    // Night 5: The Final Shift (True Terror)
+    { hour: 0, aadesh: 10, dipu: 8, ab: 9, johann: 8 },
+    { hour: 1, aadesh: 12, dipu: 10, ab: 11, johann: 10 },
+    { hour: 2, aadesh: 13, dipu: 11, ab: 12, johann: 10 }, // 2 AM calm before the storm
+    { hour: 3, aadesh: 15, dipu: 13, ab: 14, johann: 13 },
+    { hour: 4, aadesh: 17, dipu: 15, ab: 16, johann: 15 },
+    { hour: 5, aadesh: 18, dipu: 17, ab: 18, johann: 17 },
+  ],
+};
+
 export const NIGHT_PRESETS = {
   1: { hourSeconds: 400 / 6, abLevel: 3, dipuLevel: 1, aadeshLevel: 2, johannLevel: 2, doorWaitTime: 5.0, label: 'Night 1 - The Orientation' },
   2: { hourSeconds: 400 / 6, abLevel: 6, dipuLevel: 4, aadeshLevel: 5, johannLevel: 5, doorWaitTime: 4.0, label: 'Night 2 - Disturbances' },
@@ -31,6 +85,9 @@ export class GameState {
   constructor(night = 1, customConfig = null) {
     const config = customConfig || NIGHT_PRESETS[night] || NIGHT_PRESETS[1];
     this.night = night;
+    this.customConfig = customConfig;
+    this.isGeneratorAvailable = (this.night >= 3 || this.night === 'TUTORIAL');
+    this.isGeneratorUsed = false;
     this.hourSeconds = config.hourSeconds || (400 / 6);
     this.abLevel = config.abLevel ?? 4;
     this.dipuLevel = config.dipuLevel ?? 3;
@@ -88,6 +145,55 @@ export class GameState {
     this.omrMaxCooldown = 15;
     this.omrCooldown = 0; // Starts ready (0s)
     this.isOmrUploading = false;
+    this.applyHourlyAI();
+  }
+
+
+  // FNAF-inspired hourly AI level scheduler
+  applyHourlyAI(onEvent = null) {
+    if (this.customConfig) {
+      if (this.time >= 2) {
+        const bonus = Math.min(3, Math.floor(this.time / 2));
+        this.abLevel = Math.min(20, (this.customConfig.abLevel ?? 10) + bonus);
+        this.dipuLevel = Math.min(20, (this.customConfig.dipuLevel ?? 10) + bonus);
+        this.aadeshLevel = Math.min(20, (this.customConfig.aadeshLevel ?? 10) + bonus);
+        this.johannLevel = Math.min(20, (this.customConfig.johannLevel ?? 10) + bonus);
+      }
+      return;
+    }
+
+    const schedule = HOURLY_AI_SCHEDULE[this.night];
+    if (!schedule) return;
+
+    const currentHourIndex = Math.min(5, Math.max(0, this.time));
+    const entry = schedule[currentHourIndex];
+    if (entry) {
+      this.aadeshLevel = entry.aadesh;
+      this.dipuLevel = entry.dipu;
+      this.abLevel = entry.ab;
+      this.johannLevel = entry.johann;
+    }
+  }
+
+  // Auxiliary Power Generator (Night 3+)
+  // Restores 10-15% power via wire-matching puzzle and aborts blackouts
+  activateGenerator(onEvent = null) {
+    if (this.isGeneratorUsed) return 0;
+    const powerBonus = Math.floor(Math.random() * 6) + 10; // 10% to 15%
+    this.power = Math.min(100, this.power + powerBonus);
+    this.isGeneratorUsed = true;
+    if (this.isBlackout) {
+      this.isBlackout = false;
+      this.blackoutTimer = 0;
+    }
+    if (onEvent) {
+      onEvent({
+        type: 'GENERATOR_ACTIVATED',
+        powerRestored: powerBonus,
+        newPower: this.power,
+      });
+    }
+    return powerBonus;
   }
 
   getUsageBars() {
@@ -243,6 +349,7 @@ export class GameState {
     if (this.isGameOver || this.isGameWon) return;
     this.timeProgress = 0;
     this.time += 1;
+    this.applyHourlyAI(onEvent);
     if (onEvent) onEvent({ type: 'HOUR_CHANGE', hour: this.time });
     if (this.time >= 6) {
       this.isGameWon = true;
@@ -299,6 +406,7 @@ export class GameState {
       if (this.timeProgress >= 1) {
         this.timeProgress = 0;
         this.time += 1;
+        this.applyHourlyAI(onEvent);
         onEvent({ type: 'HOUR_CHANGE', hour: this.time });
         if (this.time >= 6) {
           this.isGameWon = true;
@@ -350,6 +458,11 @@ export class GameState {
   // Abhishek breaks in and kills player even if door is closed!
   // Player must scare him away with scare audio
   updateAB(dt, onEvent) {
+    // FNAF 1 Freddy Mechanic: Abhishek freezes while player watches his camera room!
+    if (this.isMonitorOpen && this.currentCam === this.ab.location && this.ab.location !== 'DOOR') {
+      this.abMoveTimer = 0;
+      return;
+    }
     if (this.ab.location === 'DOOR') {
       this.ab.atDoorTimer += dt;
 
@@ -399,6 +512,11 @@ export class GameState {
   // After 2 seconds, bangs the door. After 5 seconds, kills you.
   // Goes away if player wears mask.
   updateJohann(dt, onEvent) {
+    // FNAF Mechanic: Watching Balcony (CAM_6) stalls Johann from departing!
+    if (this.isMonitorOpen && this.currentCam === 'CAM_6' && this.johann.location === 'CAM_6') {
+      this.johannMoveTimer = 0;
+      return;
+    }
     if (this.johann.location === 'DOOR') {
       this.johann.timer += dt;
 
