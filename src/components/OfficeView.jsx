@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronRight, Maximize, Minimize, Volume2 } from 'lucide-react';
+import { Clock, Zap, Lock, Unlock, Lightbulb, ShieldAlert, Pause, ChevronLeft, ChevronRight, Maximize, Minimize, Volume2 } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { getUsageBars } from '../game/gameEngine';
 import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
@@ -7,6 +7,7 @@ import DeskFan from './DeskFan';
 import DeskMonitor from './DeskMonitor';
 import OmrUploadModal from './OmrUploadModal';
 import WirePuzzleModal from './WirePuzzleModal';
+import { formatGameClock } from '../utils/clock';
 
 export default function OfficeView({
   gameState,
@@ -20,6 +21,8 @@ export default function OfficeView({
   onOmrComplete,
   scareSubtitle,
   onActivateGenerator,
+  showMinutes = false,
+  onToggleClockFormat,
 }) {
   const [isOmrModalOpen, setIsOmrModalOpen] = useState(false);
   const [isWirePuzzleOpen, setIsWirePuzzleOpen] = useState(false);
@@ -581,7 +584,7 @@ export default function OfficeView({
       {/* Top Right: Time Clock & Night */}
       <div className="absolute top-3 sm:top-6 right-3 sm:right-6 z-30 bg-black/85 backdrop-blur border border-neutral-800 p-2 sm:p-3 rounded-lg text-right pointer-events-none">
         <div className="text-lg sm:text-2xl font-black font-mono tracking-widest text-white leading-tight">
-          {gameState.time === 0 ? '12' : gameState.time} AM
+          {formatGameClock(gameState.time, gameState.timeProgress, showMinutes)}
         </div>
         <div className="text-[9px] sm:text-[11px] text-red-500 font-bold uppercase tracking-widest font-mono">
           NIGHT {gameState.night}
@@ -602,6 +605,17 @@ export default function OfficeView({
           </button>
         )}
 
+        {onToggleClockFormat && (
+          <button
+            onClick={onToggleClockFormat}
+            disabled={gameState.isBlackout}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-black/85 hover:bg-neutral-800 border border-neutral-700 hover:border-cyan-400 text-gray-300 hover:text-cyan-300 rounded-lg font-mono text-[10px] sm:text-xs tracking-wider flex items-center gap-1 sm:gap-1.5 transition-all shadow-lg cursor-pointer active:scale-95"
+            title={showMinutes ? 'Clock: Detailed minutes. Click to switch to 1AM' : 'Clock: Standard hours. Click to switch to 1:00AM'}
+          >
+            <Clock size={12} className={showMinutes ? 'text-cyan-400' : 'text-gray-400'} />
+            <span>{showMinutes ? '1:00AM' : '1AM'}</span>
+          </button>
+        )}
         <button
           onClick={handleToggleFullscreen}
           disabled={gameState.isBlackout}

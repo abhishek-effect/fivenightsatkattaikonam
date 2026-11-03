@@ -35,6 +35,16 @@ export default function App() {
   const [cameraGlitch, setCameraGlitch] = useState(false);
   const [scareSubtitle, setScareSubtitle] = useState(null);
   const [devToastMessage, setDevToastMessage] = useState(null);
+  const [showMinutes, setShowMinutes] = useState(() => localStorage.getItem('fnak_show_minutes') === 'true');
+
+  const handleToggleClockFormat = useCallback(() => {
+    setShowMinutes(prev => {
+      const next = !prev;
+      localStorage.setItem('fnak_show_minutes', String(next));
+      return next;
+    });
+  }, []);
+
 
   const customConfigRef = useRef(null);
 
@@ -417,6 +427,8 @@ export default function App() {
           onSelectNight={handleSelectNight}
           onResetProgress={handleResetProgress}
           onStartTutorial={() => setScreen('TUTORIAL')}
+          showMinutes={showMinutes}
+          onToggleClockFormat={handleToggleClockFormat}
         />
       )}
 
@@ -448,6 +460,8 @@ export default function App() {
             onOmrComplete={handleOmrComplete}
             scareSubtitle={scareSubtitle}
             onActivateGenerator={handleActivateGenerator}
+            showMinutes={showMinutes}
+            onToggleClockFormat={handleToggleClockFormat}
           />
 
           {gameState.isMonitorOpen && (
@@ -458,6 +472,7 @@ export default function App() {
               onPlayScare={handlePlayScare}
               cameraGlitch={cameraGlitch}
               scareSubtitle={scareSubtitle}
+              showMinutes={showMinutes}
             />
           )}
 

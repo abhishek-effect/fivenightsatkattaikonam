@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
+import { Clock, Download, Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import RulesModal from './RulesModal';
 import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
-export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress, onStartTutorial }) {
+export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress, onStartTutorial, showMinutes = false, onToggleClockFormat }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
   const [showCredits, setShowCredits] = useState(false);
   const [showCustomNight, setShowCustomNight] = useState(false);

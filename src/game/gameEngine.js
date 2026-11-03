@@ -370,16 +370,24 @@ export class GameState {
   }
 
   // Skip one in-game hour (triggered when OMR quota is met)
+  // Preserves minute progress within the hour so that uploading at 1:44 AM skips to 2:44 AM
+  // instead of resetting back to 2:00 AM!
   skipHour(onEvent) {
     if (this.isGameOver || this.isGameWon) return;
-    this.timeProgress = 0;
     this.time += 1;
+    if (this.time >= 6) {
+      this.time = 6;
+      this.timeProgress = 0;
+      this.isGameWon = true;
+      this.applyHourlyAI(onEvent);
+      if (onEvent) {
+        onEvent({ type: 'HOUR_CHANGE', hour: this.time });
+        onEvent({ type: 'GAME_WIN' });
+      }
+      return;
+    }
     this.applyHourlyAI(onEvent);
     if (onEvent) onEvent({ type: 'HOUR_CHANGE', hour: this.time });
-    if (this.time >= 6) {
-      this.isGameWon = true;
-      if (onEvent) onEvent({ type: 'GAME_WIN' });
-    }
   }
 
   // Handle completed OMR upload
@@ -434,6 +442,8 @@ export class GameState {
         this.applyHourlyAI(onEvent);
         onEvent({ type: 'HOUR_CHANGE', hour: this.time });
         if (this.time >= 6) {
+          this.time = 6;
+          this.timeProgress = 0;
           this.isGameWon = true;
           onEvent({ type: 'GAME_WIN' });
           return;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Camera, AlertTriangle, ChevronDown, ChevronUp, Volume2, Radio } from 'lucide-react';
 import { CAMERAS } from '../game/gameEngine';
 import { soundManager } from '../audio/SoundManager';
+import { formatGameClock } from '../utils/clock';
 
 export default function CameraMonitor({
   gameState,
@@ -10,6 +11,7 @@ export default function CameraMonitor({
   onPlayScare,
   cameraGlitch,
   scareSubtitle,
+  showMinutes = false,
 }) {
   const [switchingStatic, setSwitchingStatic] = useState(false);
   const [isMapMinimized, setIsMapMinimized] = useState(false);
@@ -235,18 +237,10 @@ export default function CameraMonitor({
         ))}
 
 
-        {/* Enemy Movement Camera Glitch (1-second static & interference burst) */}
+        {/* Camera Feed Blink on Enemy Movement */}
         {cameraGlitch && (
-          <div className="absolute inset-0 z-45 pointer-events-none overflow-hidden animate-pulse">
-            <div className="absolute inset-0 bg-neutral-900/90 static-fuzz opacity-90 mix-blend-screen" />
-            <div className="absolute top-[25%] inset-x-0 h-6 bg-cyan-400/30 glitch-slice-bar mix-blend-screen" />
-            <div className="absolute top-[60%] inset-x-0 h-8 bg-red-600/40 glitch-slice-bar mix-blend-color-dodge" style={{ animationDelay: '0.15s' }} />
-            <div className="absolute top-[75%] inset-x-0 h-4 bg-yellow-300/30 glitch-slice-bar mix-blend-screen" style={{ animationDelay: '0.3s' }} />
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-              <span className="bg-black/80 border border-red-500/80 px-3 py-1 rounded text-red-500 font-mono text-xs sm:text-sm font-black tracking-widest uppercase shadow-[0_0_20px_rgba(239,68,68,0.8)]">
-                ● MOTION INTERFERENCE DETECTED
-              </span>
-            </div>
+          <div className="absolute inset-0 z-45 pointer-events-none bg-black/95 transition-opacity duration-150 animate-pulse flex items-center justify-center">
+            <div className="absolute inset-0 static-fuzz opacity-25 pointer-events-none" />
           </div>
         )}
 
@@ -303,7 +297,7 @@ export default function CameraMonitor({
 
           <div className="bg-black/85 backdrop-blur px-2 sm:px-4 py-1 sm:py-2 rounded-lg border border-neutral-700 shadow-xl text-right font-mono">
             <div className="text-xs sm:text-xl font-bold text-white">
-              {gameState.time === 0 ? '12' : gameState.time} AM
+              {formatGameClock(gameState.time, gameState.timeProgress, showMinutes)}
             </div>
             <div className="text-[8px] sm:text-xs text-red-400 font-bold">NIGHT {gameState.night}</div>
           </div>
