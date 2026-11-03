@@ -9,7 +9,8 @@ A FNAF-inspired web survival horror game built with **React**, **Vite**, **Tailw
 - **Interactive Tutorial Gameplay & How to Play**: The central part of the "How to Play" system — a guided sample night shift with real-time instructions, and an in-tutorial clickable **View Rules** manual.
 - **First-Time Shift Prompt**: Starting any night prompts first-time players asking if they'd like to take the tutorial orientation, remembering their choice permanently in localStorage.
 - **Office Panoramic View**: Smooth mouse and touch panning with authentic security desk, spinning animated fan, dynamic power drain gauge, and digital clock.
-- **Auxiliary Power Generator (Night 3+)**: Located to the left of the OMR Desk Monitor starting Night 3. If power runs out or drops dangerously low, click the generator to solve an Among Us style wire-matching puzzle to restore **+10% to +15% power** and abort blackouts.
+- **Auxiliary Power Generator**: Usable from the start of any shift! Located to the left of the OMR Desk Monitor (and via top-left HUD). Solve the wire-matching puzzle to arm it — extra power (**+10% to +15%**) automatically kicks in the instant facility power reaches 0% to prevent blackout!
+- **PWA & Add to Home Screen Support**: Full Progressive Web App (PWA) with `manifest.json`, Service Worker, offline asset caching, and one-click **"INSTALL APP" / "ADD TO HOME SCREEN"** for Android, iOS Safari, and Desktop.
 - **Security Doors & Hallway Light**: Toggle blast door lockdown (`[D]`) and hallway light (`[L]`).
 - **Security Mask Overlay**: Put on your mask (`[M]`) to disguise yourself from Johann when he lurks in the door window.
 - **Scare Audio Lure with Subtitles**: Broadcast teacher voice lines (`[A]`) with a 10-second countdown to scare Abhishek away to another room, showing speech subtitles (`"Where is your photocopy?"`, `"Change your attitude children!"`, `"Submit your dpp!"`).

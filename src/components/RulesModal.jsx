@@ -154,10 +154,10 @@ export default function RulesModal({ onClose }) {
             <div className="space-y-1.5 border-l-2 border-yellow-500 pl-3">
               <div className="flex items-center gap-1.5 text-yellow-400 font-bold uppercase tracking-wider text-xs">
                 <Zap size={14} />
-                <span>Auxiliary Power Generator (Night 3+)</span>
+                <span>Auxiliary Power Generator (Usable from the Start)</span>
               </div>
               <p className="text-[11px] text-gray-300">
-                Located to the left of the OMR Desk Monitor starting Night 3. If power runs out or gets critically low, click the Generator to solve the wire-matching puzzle. Completing the puzzle restores <strong className="text-yellow-300">+10% to +15% power</strong> and aborts blackouts!
+                Located to the left of the OMR Desk Monitor (and in the top-left HUD). You can click the generator at any time from the start of your shift to match wires and ARM it. The extra <strong className="text-yellow-300">+10% to +15% power</strong> automatically activates the instant facility power reaches 0%, preventing blackout! If power has already hit 0%, wiring it activates the extra power immediately.
               </p>
             </div>
           </div>

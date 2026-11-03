@@ -86,8 +86,10 @@ export class GameState {
     const config = customConfig || NIGHT_PRESETS[night] || NIGHT_PRESETS[1];
     this.night = night;
     this.customConfig = customConfig;
-    this.isGeneratorAvailable = (this.night >= 3 || this.night === 'TUTORIAL');
+    this.isGeneratorAvailable = true; // Usable from the start on all shifts
     this.isGeneratorUsed = false;
+    this.isGeneratorPrimed = false;
+    this.generatorBonus = 0;
     this.hourSeconds = config.hourSeconds || (400 / 6);
     this.abLevel = config.abLevel ?? 4;
     this.dipuLevel = config.dipuLevel ?? 3;
@@ -175,13 +177,37 @@ export class GameState {
     }
   }
 
-  // Auxiliary Power Generator (Night 3+)
-  // Restores 10-15% power via wire-matching puzzle and aborts blackouts
-  activateGenerator(onEvent = null) {
-    if (this.isGeneratorUsed) return 0;
+  // Auxiliary Power Generator: Usable from the start!
+  // If power reaches 0%, extra power activates immediately;
+  // If power > 0%, arms/primes the generator so it will automatically trigger when power reaches 0%!
+  solveGeneratorWirePuzzle(onEvent = null) {
+    if (this.isGeneratorUsed) return { activated: false, primed: false };
     const powerBonus = Math.floor(Math.random() * 6) + 10; // 10% to 15%
-    this.power = Math.min(100, this.power + powerBonus);
+    this.generatorBonus = powerBonus;
+
+    // If already at 0% power or in blackout: activate immediately!
+    if (this.power <= 0 || this.isBlackout) {
+      return this.activateGenerator(onEvent);
+    }
+
+    // Otherwise prime for when power reaches 0%
+    this.isGeneratorPrimed = true;
+    if (onEvent) {
+      onEvent({
+        type: 'GENERATOR_PRIMED',
+        powerBonus,
+      });
+    }
+    return { activated: false, primed: true, powerBonus };
+  }
+
+  // Activate extra power (triggered when power reaches 0%)
+  activateGenerator(onEvent = null) {
+    if (this.isGeneratorUsed) return { activated: false, powerRestored: 0 };
+    const powerRestored = this.generatorBonus || (Math.floor(Math.random() * 6) + 10);
+    this.power = Math.min(100, this.power + powerRestored);
     this.isGeneratorUsed = true;
+    this.isGeneratorPrimed = false;
     if (this.isBlackout) {
       this.isBlackout = false;
       this.blackoutTimer = 0;
@@ -189,13 +215,12 @@ export class GameState {
     if (onEvent) {
       onEvent({
         type: 'GENERATOR_ACTIVATED',
-        powerRestored: powerBonus,
+        powerRestored,
         newPower: this.power,
       });
     }
-    return powerBonus;
+    return { activated: true, powerRestored, newPower: this.power };
   }
-
   getUsageBars() {
     return getUsageBars(this);
   }
@@ -426,6 +451,12 @@ export class GameState {
         this.power = Math.max(0, this.power - drainPerSec * dt);
 
         if (this.power <= 0) {
+          // If generator is primed, automatically activate extra power when power reaches 0!
+          if (this.isGeneratorPrimed && !this.isGeneratorUsed) {
+            this.activateGenerator(onEvent);
+            return;
+          }
+
           this.isBlackout = true;
           this.isDoorClosed = false;
           this.isLightOn = false;

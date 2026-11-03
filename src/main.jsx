@@ -30,6 +30,22 @@ Object.defineProperty(window, 'isDeveloper', {
 });
 window.isDeveloper = false;
 
+// Register Service Worker for PWA (Add to Home Screen)
+if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('PWA service worker registration error:', err);
+    });
+  });
+}
+
+// Global PWA Install Prompt Handler
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPWAInstallPrompt = e;
+  window.dispatchEvent(new CustomEvent('pwa-installable'));
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>

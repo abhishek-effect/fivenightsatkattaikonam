@@ -9,7 +9,7 @@ const WIRE_COLORS = [
   { id: 'magenta', name: 'MAGENTA', hex: '#ec4899', glow: 'rgba(236, 72, 153, 0.8)' },
 ];
 
-export default function WirePuzzleModal({ onComplete, onClose }) {
+export default function WirePuzzleModal({ gameState, onComplete, onClose }) {
   // Shuffled terminal orders
   const [leftWires, setLeftWires] = useState([]);
   const [rightWires, setRightWires] = useState([]);
@@ -20,6 +20,7 @@ export default function WirePuzzleModal({ onComplete, onClose }) {
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [isFinished, setIsFinished] = useState(false);
   const [powerRestoredAmount, setPowerRestoredAmount] = useState(12);
+  const isPowerZero = Boolean(!gameState || gameState.power <= 0 || gameState.isBlackout);
 
   const containerRef = useRef(null);
   const leftPinRefs = useRef({});
@@ -134,7 +135,9 @@ export default function WirePuzzleModal({ onComplete, onClose }) {
                 AUXILIARY GENERATOR // REWIRE
               </h3>
               <p className="text-[10px] text-gray-400">
-                Connect all matching color terminals to reboot generator
+                {isPowerZero
+                  ? 'Connect all 4 wires to restore power (+10-15%) immediately!'
+                  : 'Connect all 4 wires to arm generator. Extra power activates when power reaches 0%!'}
               </p>
             </div>
           </div>
@@ -277,12 +280,16 @@ export default function WirePuzzleModal({ onComplete, onClose }) {
           {isFinished ? (
             <div className="flex items-center gap-2 text-emerald-400 font-black animate-bounce text-sm">
               <CheckCircle2 size={16} />
-              <span>GENERATOR ACTIVATED (+{powerRestoredAmount}% POWER)!</span>
+              <span>
+                {isPowerZero
+                  ? `GENERATOR ACTIVATED (+${powerRestoredAmount}% POWER RESTORED)!`
+                  : `GENERATOR ARMED! (+${powerRestoredAmount}% READY FOR 0% POWER)!`}
+              </span>
             </div>
           ) : (
             <div className="text-[11px] text-gray-400 flex items-center gap-1">
               <AlertTriangle size={13} className="text-yellow-500" />
-              <span>MATCH ALL 4 WIRES BY COLOR</span>
+              <span>{isPowerZero ? 'MATCH WIRES TO RESTORE POWER IMMEDIATELY' : 'MATCH WIRES: WILL ACTIVATE WHEN POWER REACHES 0%'}</span>
             </div>
           )}
         </div>

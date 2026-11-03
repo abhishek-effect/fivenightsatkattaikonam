@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
+import { Download, Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle, Users, Maximize, Minimize, BookOpen, ShieldAlert, Zap, Lock, Lightbulb, Camera, Upload, AlertTriangle } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import RulesModal from './RulesModal';
@@ -13,6 +13,29 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
   const [customAI, setCustomAI] = useState({ ab: 10, dipu: 10, aadesh: 10, johann: 10 });
   const [isGlitchCalm, setIsGlitchCalm] = useState(false);
+  const [canInstallPWA, setCanInstallPWA] = useState(Boolean(window.deferredPWAInstallPrompt));
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+
+  useEffect(() => {
+    const handlePwaReady = () => setCanInstallPWA(true);
+    window.addEventListener('pwa-installable', handlePwaReady);
+    return () => window.removeEventListener('pwa-installable', handlePwaReady);
+  }, []);
+
+  const handleInstallPWA = async (e) => {
+    e?.stopPropagation();
+    if (window.deferredPWAInstallPrompt) {
+      window.deferredPWAInstallPrompt.prompt();
+      const choiceResult = await window.deferredPWAInstallPrompt.userChoice;
+      if (choiceResult.outcome === 'accepted') {
+        window.deferredPWAInstallPrompt = null;
+        setCanInstallPWA(false);
+      }
+    } else {
+      setShowInstallGuide(true);
+    }
+  };
+
   const [glitchBurst, setGlitchBurst] = useState(false);
 
   // Sync fullscreen state
@@ -321,6 +344,14 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
             </button>
           )}
 
+          {/* ADD TO HOME SCREEN / INSTALL BUTTON */}
+          <button
+            onClick={handleInstallPWA}
+            className="w-full py-1.5 sm:py-2 px-3 sm:px-4 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-600/50 hover:border-emerald-400 text-emerald-300 font-mono text-[11px] sm:text-xs rounded transition flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+          >
+            <Download size={13} className="text-emerald-400" />
+            <span>ADD TO HOME SCREEN / INSTALL</span>
+          </button>
           {/* HOW TO PLAY BUTTON */}
           <button
             onClick={(e) => { e.stopPropagation(); if (onStartTutorial) onStartTutorial(); }}
@@ -407,6 +438,67 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
                 <span>NO THANKS, START SHIFT</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PWA INSTALL GUIDE MODAL */}
+      {showInstallGuide && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fadeIn"
+        >
+          <div className="bg-neutral-950 border-2 border-emerald-500 rounded-2xl max-w-md w-full p-5 sm:p-6 text-gray-200 font-mono shadow-[0_0_50px_rgba(16,185,129,0.4)] space-y-4">
+            <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+              <div className="flex items-center gap-2">
+                <Download size={18} className="text-emerald-400" />
+                <h3 className="text-sm sm:text-base font-bold text-emerald-400">
+                  INSTALL TO HOME SCREEN
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowInstallGuide(false)}
+                className="text-gray-400 hover:text-white p-1 rounded font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs leading-relaxed text-gray-300">
+              <div className="bg-neutral-900/80 p-2.5 rounded border border-neutral-800 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <span>📱 Chrome / Android:</span>
+                </div>
+                <p className="text-gray-400 text-[11px]">
+                  Tap browser menu (<strong>⋮</strong> at top right) and select <strong className="text-emerald-300">&quot;Add to Home screen&quot;</strong> or <strong className="text-emerald-300">&quot;Install app&quot;</strong>.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900/80 p-2.5 rounded border border-neutral-800 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <span>🍎 Safari (iPhone / iPad):</span>
+                </div>
+                <p className="text-gray-400 text-[11px]">
+                  Tap the <strong>Share</strong> button (<strong>⎋</strong> at bottom) and choose <strong className="text-emerald-300">&quot;Add to Home Screen&quot;</strong>.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900/80 p-2.5 rounded border border-neutral-800 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <span>💻 PC / Mac / Chrome / Edge:</span>
+                </div>
+                <p className="text-gray-400 text-[11px]">
+                  Click the <strong>Install</strong> icon in the address bar (or browser menu &gt; &quot;Install Five Nights at Kattaikonam&quot;).
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInstallGuide(false)}
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs cursor-pointer active:scale-95 transition"
+            >
+              GOT IT
+            </button>
           </div>
         </div>
       )}

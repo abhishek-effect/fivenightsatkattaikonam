@@ -186,6 +186,10 @@ export default function App() {
         soundManager.playFootstep(false);
         break;
 
+      case 'GENERATOR_PRIMED':
+        soundManager.playWireConnect();
+        break;
+
       case 'GENERATOR_ACTIVATED':
         soundManager.playGeneratorRevUp();
         break;
@@ -338,7 +342,7 @@ export default function App() {
 
   const handleActivateGenerator = useCallback((powerAmount) => {
     if (!gameState) return;
-    gameState.activateGenerator(handleGameEvent);
+    gameState.solveGeneratorWirePuzzle(handleGameEvent);
     setGameState(refreshGameState(gameState));
   }, [gameState, refreshGameState, handleGameEvent]);
 

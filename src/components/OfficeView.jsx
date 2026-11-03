@@ -287,27 +287,38 @@ export default function OfficeView({
         )}
 
 
-        {/* Auxiliary Power Generator (Night 3+) */}
-        {(gameState.isGeneratorAvailable || gameState.night >= 3 || gameState.night === 'TUTORIAL') && (
+        {/* Auxiliary Power Generator: Usable from the start! */}
+        {(gameState.isGeneratorAvailable ?? true) && (
           <div
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (!gameState.isGeneratorUsed) {
                 setIsWirePuzzleOpen(true);
               }
             }}
-            className={`absolute bottom-[46%] sm:bottom-[47%] md:bottom-[47.5%] left-[1.2%] sm:left-[1.8%] md:left-[2.2%] pointer-events-auto w-20 h-26 sm:w-26 sm:h-30 md:w-32 md:h-36 rounded-xl border-2 transition active:scale-95 flex flex-col justify-between p-1.5 sm:p-2 cursor-pointer shadow-2xl ${
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              if (!gameState.isGeneratorUsed) {
+                setIsWirePuzzleOpen(true);
+              }
+            }}
+            className={`absolute bottom-[45%] sm:bottom-[46%] md:bottom-[46.5%] left-[3.5%] sm:left-[4%] md:left-[4.5%] pointer-events-auto w-20 h-26 sm:w-26 sm:h-30 md:w-30 md:h-34 lg:w-34 lg:h-38 rounded-xl border-2 transition active:scale-95 flex flex-col justify-between p-1.5 sm:p-2 cursor-pointer shadow-2xl ${
               gameState.isBlackout ? 'z-36' : 'z-18'
             } ${
               gameState.isGeneratorUsed
                 ? 'bg-neutral-950/90 border-neutral-800 opacity-60 cursor-not-allowed'
+                : gameState.isGeneratorPrimed
+                ? 'bg-cyan-950/95 border-cyan-400 text-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.7)] animate-pulse'
                 : gameState.isBlackout || gameState.power < 20
-                ? 'bg-yellow-950/90 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.9)] animate-pulse'
-                : 'bg-neutral-900/90 border-neutral-700 hover:border-yellow-500 shadow-[0_0_15px_rgba(0,0,0,0.8)]'
+                ? 'bg-yellow-950/95 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.9)] animate-pulse'
+                : 'bg-neutral-900/90 border-neutral-700 hover:border-yellow-400 shadow-[0_0_15px_rgba(0,0,0,0.8)]'
             }`}
             title={
               gameState.isGeneratorUsed
                 ? 'Generator Fuel Spent'
-                : 'Auxiliary Power Generator (Click to Rewire & Restore 10-15% Power)'
+                : gameState.isGeneratorPrimed
+                ? 'Generator Armed: Will activate extra power when power reaches 0%'
+                : 'Auxiliary Power Generator (Click to Rewire: activates extra power when power reaches 0%)'
             }
           >
             {/* Generator Header with Hazard Stripes */}
@@ -321,6 +332,8 @@ export default function OfficeView({
                   className={
                     gameState.isGeneratorUsed
                       ? 'text-gray-600'
+                      : gameState.isGeneratorPrimed
+                      ? 'text-cyan-400 animate-pulse'
                       : gameState.isBlackout || gameState.power < 20
                       ? 'text-yellow-400 animate-spin'
                       : 'text-yellow-500 animate-pulse'
@@ -337,6 +350,8 @@ export default function OfficeView({
                   className={`w-2 h-2 rounded-full ${
                     gameState.isGeneratorUsed
                       ? 'bg-red-900'
+                      : gameState.isGeneratorPrimed
+                      ? 'bg-cyan-400 animate-ping'
                       : gameState.isBlackout || gameState.power < 20
                       ? 'bg-yellow-400 animate-ping'
                       : 'bg-emerald-400 animate-pulse'
@@ -346,6 +361,8 @@ export default function OfficeView({
                   className={`text-[6.5px] sm:text-[7.5px] font-bold font-mono tracking-tight ${
                     gameState.isGeneratorUsed
                       ? 'text-neutral-500'
+                      : gameState.isGeneratorPrimed
+                      ? 'text-cyan-300 font-black'
                       : gameState.isBlackout || gameState.power < 20
                       ? 'text-yellow-300 font-black'
                       : 'text-emerald-400'
@@ -353,6 +370,8 @@ export default function OfficeView({
                 >
                   {gameState.isGeneratorUsed
                     ? 'DEPLETED'
+                    : gameState.isGeneratorPrimed
+                    ? 'ARMED (0%)'
                     : gameState.isBlackout
                     ? 'EMERGENCY!'
                     : 'READY'}
@@ -362,11 +381,14 @@ export default function OfficeView({
 
             {/* Sublabel */}
             <div className="text-center font-mono text-[6.5px] sm:text-[7.5px] text-gray-400 uppercase tracking-tighter border-t border-neutral-800 pt-0.5">
-              {gameState.isGeneratorUsed ? 'OFFLINE' : '+10-15% AUX'}
+              {gameState.isGeneratorUsed
+                ? 'OFFLINE'
+                : gameState.isGeneratorPrimed
+                ? 'ARMED FOR 0%'
+                : '+10-15% AT 0%'}
             </div>
           </div>
         )}
-
         {/* Floating Abhishek Scare Subtitle in Office */}
         {scareSubtitle && (
           <div className="absolute top-[38%] right-[11%] sm:right-[13%] z-35 pointer-events-none animate-bounce">
@@ -613,6 +635,22 @@ export default function OfficeView({
           </span>
         </button>
       </div>
+
+      {/* WIRE PUZZLE MODAL FOR AUXILIARY GENERATOR */}
+      {isWirePuzzleOpen && (
+        <WirePuzzleModal
+          gameState={gameState}
+          onComplete={(powerAmount) => {
+            if (onActivateGenerator) {
+              onActivateGenerator(powerAmount);
+            } else if (gameState && typeof gameState.solveGeneratorWirePuzzle === 'function') {
+              gameState.solveGeneratorWirePuzzle();
+            }
+            setIsWirePuzzleOpen(false);
+          }}
+          onClose={() => setIsWirePuzzleOpen(false)}
+        />
+      )}
 
       {/* Interactive OMR Upload Terminal Modal */}
       <OmrUploadModal
