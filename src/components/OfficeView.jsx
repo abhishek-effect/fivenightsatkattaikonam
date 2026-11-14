@@ -290,8 +290,8 @@ export default function OfficeView({
         )}
 
 
-        {/* Auxiliary Power Generator: Usable from the start! */}
-        {(gameState.isGeneratorAvailable ?? true) && (
+        {/* Auxiliary Power Generator: Usable only from Night 3 onwards! */}
+        {Boolean(gameState.isGeneratorAvailable) && (
           <div
             onClick={(e) => {
               e.stopPropagation();
@@ -650,8 +650,8 @@ export default function OfficeView({
         </button>
       </div>
 
-      {/* WIRE PUZZLE MODAL FOR AUXILIARY GENERATOR */}
-      {isWirePuzzleOpen && (
+      {/* WIRE PUZZLE MODAL FOR AUXILIARY GENERATOR (Night 3+ only) */}
+      {Boolean(gameState.isGeneratorAvailable) && isWirePuzzleOpen && (
         <WirePuzzleModal
           gameState={gameState}
           onComplete={(powerAmount) => {

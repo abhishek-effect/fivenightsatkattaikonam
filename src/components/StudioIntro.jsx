@@ -9,9 +9,29 @@ export default function StudioIntro({ onFinish }) {
   const [assetStatus, setAssetStatus] = useState('Initializing facility feeds...');
   const [isLoaded, setIsLoaded] = useState(false);
   const [fadeStage, setFadeStage] = useState('in'); // 'in', 'show', 'out'
+  const [activeMenuImg, setActiveMenuImg] = useState(0);
+  const [isSwitchGlitching, setIsSwitchGlitching] = useState(false);
   const skipRequestedRef = useRef(false);
   const minTimeElapsedRef = useRef(false);
   const isFinishedRef = useRef(false);
+
+  // Alternate between current image and new main menu image every 1.5 seconds with glitch effect while loading
+  useEffect(() => {
+    let glitchTimer = null;
+    const interval = setInterval(() => {
+      setIsSwitchGlitching(true);
+      setActiveMenuImg((prev) => (prev === 0 ? 1 : 0));
+
+      glitchTimer = setTimeout(() => {
+        setIsSwitchGlitching(false);
+      }, 180);
+    }, 1500);
+
+    return () => {
+      clearInterval(interval);
+      if (glitchTimer) clearTimeout(glitchTimer);
+    };
+  }, []);
 
   const finishIntro = () => {
     if (isFinishedRef.current) return;
@@ -84,6 +104,30 @@ export default function StudioIntro({ onFinish }) {
         fadeStage === 'out' ? 'opacity-0' : 'opacity-100'
       }`}
     >
+      {/* Background alternating menu image with glitching effect during loading screen */}
+      <div 
+        className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-none ${
+          isSwitchGlitching ? 'translate-x-3 -translate-y-2 scale-105 filter contrast-175 brightness-135 saturate-150 skew-x-1' : 'menu-bg-shaky filter contrast-115'
+        } ${activeMenuImg === 0 ? 'opacity-35 z-0' : 'opacity-0 z-0'}`}
+        style={{ backgroundImage: `url('./assets/images/main-menu.jpg')` }}
+      />
+      <div 
+        className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-none ${
+          isSwitchGlitching ? '-translate-x-3 translate-y-2 scale-105 filter contrast-175 brightness-135 saturate-150 -skew-x-1' : 'menu-bg-shaky filter contrast-115'
+        } ${activeMenuImg === 1 ? 'opacity-35 z-0' : 'opacity-0 z-0'}`}
+        style={{ backgroundImage: `url('./assets/images/main-menu-new.png')` }}
+      />
+
+      {/* Violent Glitch Slice & Flash overlay during 1.5s twitch */}
+      {isSwitchGlitching && (
+        <>
+          <div className="absolute inset-0 bg-red-600/15 mix-blend-color-dodge pointer-events-none z-10" />
+          <div className="absolute top-[25%] inset-x-0 h-3 bg-white/30 mix-blend-screen pointer-events-none z-10" />
+          <div className="absolute top-[60%] inset-x-0 h-4 bg-cyan-400/30 mix-blend-screen pointer-events-none z-10" />
+          <div className="absolute inset-0 static-fuzz opacity-40 pointer-events-none z-10" />
+        </>
+      )}
+
       {/* Background radial glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-950/20 via-black to-black pointer-events-none" />
 

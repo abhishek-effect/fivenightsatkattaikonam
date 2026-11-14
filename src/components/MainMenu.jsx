@@ -37,6 +37,26 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
   };
 
   const [glitchBurst, setGlitchBurst] = useState(false);
+  const [activeMenuImg, setActiveMenuImg] = useState(0); // 0 = main-menu.jpg, 1 = main-menu-new.png
+  const [isSwitchGlitching, setIsSwitchGlitching] = useState(false);
+
+  // Alternate between current image and new main menu image every 1.5 seconds with glitch effect
+  useEffect(() => {
+    let glitchTimer = null;
+    const interval = setInterval(() => {
+      setIsSwitchGlitching(true);
+      setActiveMenuImg((prev) => (prev === 0 ? 1 : 0));
+
+      glitchTimer = setTimeout(() => {
+        setIsSwitchGlitching(false);
+      }, 180);
+    }, 1500);
+
+    return () => {
+      clearInterval(interval);
+      if (glitchTimer) clearTimeout(glitchTimer);
+    };
+  }, []);
 
   // Sync fullscreen state
   useEffect(() => {
@@ -153,13 +173,34 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
       onClick={handleInteraction}
       className="relative w-screen min-h-[100dvh] h-[100dvh] overflow-hidden bg-black flex flex-col justify-between p-3 sm:p-6 md:p-8 select-none"
     >
-      {/* Background menu image with shaky glitch motion */}
+      {/* Background menu images: alternating between current and new main menu image with glitch snap */}
       <div 
-        className={`absolute inset-0 bg-cover bg-center transition-all duration-200 ${
+        className={`absolute inset-0 bg-cover bg-center pointer-events-none ${
           isGlitchCalm ? 'scale-100 filter contrast-105' : 'menu-bg-shaky filter contrast-115'
-        } ${glitchBurst ? 'translate-x-2.5 -translate-y-1.5 filter contrast-160 brightness-130' : ''}`}
+        } ${glitchBurst ? 'translate-x-2.5 -translate-y-1.5 filter contrast-160 brightness-130' : ''} ${
+          isSwitchGlitching ? 'translate-x-3 -translate-y-2 scale-105 filter contrast-175 brightness-135 saturate-150 skew-x-1' : ''
+        } ${activeMenuImg === 0 ? 'opacity-100 z-1' : 'opacity-0 z-0'}`}
         style={{ backgroundImage: `url('./assets/images/main-menu.jpg')` }}
       />
+      <div 
+        className={`absolute inset-0 bg-cover bg-center pointer-events-none ${
+          isGlitchCalm ? 'scale-100 filter contrast-105' : 'menu-bg-shaky filter contrast-115'
+        } ${glitchBurst ? 'translate-x-2.5 -translate-y-1.5 filter contrast-160 brightness-130' : ''} ${
+          isSwitchGlitching ? '-translate-x-3 translate-y-2 scale-105 filter contrast-175 brightness-135 saturate-150 -skew-x-1' : ''
+        } ${activeMenuImg === 1 ? 'opacity-100 z-1' : 'opacity-0 z-0'}`}
+        style={{ backgroundImage: `url('./assets/images/main-menu-new.png')` }}
+      />
+
+      {/* Violent Glitch Slice & Flash overlay during 1.5s twitch */}
+      {isSwitchGlitching && (
+        <>
+          <div className="absolute inset-0 bg-red-600/15 mix-blend-color-dodge pointer-events-none z-2" />
+          <div className="absolute top-[20%] inset-x-0 h-4 bg-white/40 mix-blend-screen pointer-events-none z-2 transform -translate-y-2" />
+          <div className="absolute top-[55%] inset-x-0 h-6 bg-cyan-400/40 mix-blend-screen pointer-events-none z-2 transform translate-y-3" />
+          <div className="absolute top-[75%] inset-x-0 h-3 bg-red-500/50 mix-blend-screen pointer-events-none z-2" />
+          <div className="absolute inset-0 static-fuzz opacity-60 pointer-events-none z-2" />
+        </>
+      )}
 
       {/* Moving Film Grain Overlay - Disappears for 1 second periodically */}
       <div 

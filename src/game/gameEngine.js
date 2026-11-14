@@ -86,7 +86,7 @@ export class GameState {
     const config = customConfig || NIGHT_PRESETS[night] || NIGHT_PRESETS[1];
     this.night = night;
     this.customConfig = customConfig;
-    this.isGeneratorAvailable = true; // Usable from the start on all shifts
+    this.isGeneratorAvailable = typeof this.night === 'number' ? (this.night >= 3) : false; // Only available from Night 3 onwards
     this.isGeneratorUsed = false;
     this.isGeneratorPrimed = false;
     this.generatorBonus = 0;
@@ -177,11 +177,11 @@ export class GameState {
     }
   }
 
-  // Auxiliary Power Generator: Usable from the start!
+  // Auxiliary Power Generator: Usable only from Night 3 onwards!
   // If power reaches 0%, extra power activates immediately;
   // If power > 0%, arms/primes the generator so it will automatically trigger when power reaches 0%!
   solveGeneratorWirePuzzle(onEvent = null) {
-    if (this.isGeneratorUsed) return { activated: false, primed: false };
+    if (!this.isGeneratorAvailable || this.isGeneratorUsed) return { activated: false, primed: false };
     const powerBonus = Math.floor(Math.random() * 6) + 10; // 10% to 15%
     this.generatorBonus = powerBonus;
 
@@ -203,7 +203,7 @@ export class GameState {
 
   // Activate extra power (triggered when power reaches 0%)
   activateGenerator(onEvent = null) {
-    if (this.isGeneratorUsed) return { activated: false, powerRestored: 0 };
+    if (!this.isGeneratorAvailable || this.isGeneratorUsed) return { activated: false, powerRestored: 0 };
     const powerRestored = this.generatorBonus || (Math.floor(Math.random() * 6) + 10);
     this.power = Math.min(100, this.power + powerRestored);
     this.isGeneratorUsed = true;
@@ -461,8 +461,8 @@ export class GameState {
         this.power = Math.max(0, this.power - drainPerSec * dt);
 
         if (this.power <= 0) {
-          // If generator is primed, automatically activate extra power when power reaches 0!
-          if (this.isGeneratorPrimed && !this.isGeneratorUsed) {
+          // If generator is available and primed, automatically activate extra power when power reaches 0!
+          if (this.isGeneratorAvailable && this.isGeneratorPrimed && !this.isGeneratorUsed) {
             this.activateGenerator(onEvent);
             return;
           }
