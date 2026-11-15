@@ -237,10 +237,12 @@ export default function CameraMonitor({
         ))}
 
 
-        {/* Camera Feed Blink on Enemy Movement */}
+        {/* Camera Feed Fast Glitch Flash on Enemy Movement (Fast flash, no slow fade) */}
         {cameraGlitch && (
-          <div className="absolute inset-0 z-45 pointer-events-none bg-black/95 transition-opacity duration-150 animate-pulse flex items-center justify-center">
-            <div className="absolute inset-0 static-fuzz opacity-25 pointer-events-none" />
+          <div className="absolute inset-0 z-45 pointer-events-none bg-black flex items-center justify-center">
+            <div className="absolute inset-0 static-fuzz opacity-80 pointer-events-none" />
+            <div className="absolute top-[30%] inset-x-0 h-3 bg-white/40 mix-blend-screen pointer-events-none" />
+            <div className="absolute top-[65%] inset-x-0 h-4 bg-red-600/40 mix-blend-color-dodge pointer-events-none" />
           </div>
         )}
 

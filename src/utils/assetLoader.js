@@ -52,6 +52,7 @@ export const ASSET_MANIFEST = {
     { id: 'jumpscare', src: './assets/audio/jumpscare.mp3', label: 'Scream Acoustics' },
     { id: 'knock-sfx', src: './assets/audio/knock-sfx.mp3', label: 'Door Defense Acoustics' },
     { id: 'running-sfx', src: './assets/audio/running-sfx.mp3', label: 'Sprint Footstep Acoustics' },
+    { id: 'footsteps', src: './assets/audio/footsteps.mp3', label: 'Corridor Footsteps Acoustics' },
     { id: 'main-menu-bgm', src: './assets/audio/main-menu-bgm.mp3', label: 'Facility Ambience Feed' },
     { id: 'upload-success', src: './assets/audio/upload-success.mp3', label: 'OMR Upload Success Chime' },
     { id: 'scare-attitude', src: './assets/audio/change-your-attitude-children.mp3', label: 'Scare Audio: Change Your Attitude' },

@@ -47,6 +47,7 @@ export default function App() {
 
 
   const customConfigRef = useRef(null);
+  const lastMovementPlayedFootstepsRef = useRef(false);
 
   // Developer Mode (window.isDeveloper = true) Console Listener
   useEffect(() => {
@@ -94,6 +95,8 @@ export default function App() {
   const handleStartGame = (night = currentNight, customConfig = null) => {
     requestAppFullscreen();
     soundManager.stopMenuBgm();
+    soundManager.stopFootstepClip();
+    lastMovementPlayedFootstepsRef.current = false;
     setIsPaused(false);
     customConfigRef.current = customConfig;
     setCurrentNight(night);
@@ -136,6 +139,8 @@ export default function App() {
 
   // Main Menu Return
   const handleMainMenu = () => {
+    soundManager.stopFootstepClip();
+    lastMovementPlayedFootstepsRef.current = false;
     soundManager.stopFan();
     soundManager.stopHeartbeat();
     soundManager.stopSprintRunning();
@@ -181,19 +186,32 @@ export default function App() {
 
       case 'MOVEMENT':
         if (event.animatronic && ['aadesh', 'johann', 'ab'].includes(event.animatronic)) {
+          // Fast display flash on enemy movement (no slow fade)
           setCameraGlitch(true);
-          soundManager.playStaticBurst(0.08, 0.18);
-          setTimeout(() => setCameraGlitch(false), 1000);
+          soundManager.playStaticBurst(0.12, 0.18);
+          setTimeout(() => setCameraGlitch(false), 180);
+
+          // Alternating 50% footsteps logic:
+          // If it played for one movement, skip for next movement (alternate)
+          if (lastMovementPlayedFootstepsRef.current) {
+            lastMovementPlayedFootstepsRef.current = false;
+          } else {
+            if (Math.random() < 0.5) {
+              soundManager.playFootstepClip(2, 4);
+              lastMovementPlayedFootstepsRef.current = true;
+            } else {
+              lastMovementPlayedFootstepsRef.current = false;
+            }
+          }
         }
-        soundManager.playFootstep(false);
         break;
 
       case 'JOHANN_APPEARED':
       case 'JOHANN_RETREAT':
       case 'AB_SCARED':
+        // Fast display flash (180ms)
         setCameraGlitch(true);
-        setTimeout(() => setCameraGlitch(false), 1000);
-        soundManager.playFootstep(false);
+        setTimeout(() => setCameraGlitch(false), 180);
         break;
 
       case 'GENERATOR_PRIMED':
@@ -236,6 +254,7 @@ export default function App() {
         break;
 
       case 'BLACKOUT_START':
+        soundManager.stopFootstepClip();
         soundManager.stopFan();
         soundManager.stopHeartbeat();
         soundManager.stopSprintRunning();
@@ -244,6 +263,7 @@ export default function App() {
 
       case 'JUMPSCARE':
         setIsPaused(false);
+        soundManager.stopFootstepClip();
         soundManager.stopHeartbeat();
         soundManager.stopSprintRunning();
         soundManager.stopBlackoutMusic();
@@ -253,6 +273,7 @@ export default function App() {
 
       case 'GAME_WIN':
         setIsPaused(false);
+        soundManager.stopFootstepClip();
         soundManager.stopFan();
         soundManager.stopHeartbeat();
         soundManager.stopSprintRunning();
@@ -462,6 +483,7 @@ export default function App() {
             onActivateGenerator={handleActivateGenerator}
             showMinutes={showMinutes}
             onToggleClockFormat={handleToggleClockFormat}
+            isDisplayFlashing={cameraGlitch}
           />
 
           {gameState.isMonitorOpen && (

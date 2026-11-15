@@ -12,7 +12,7 @@ A FNAF-inspired web survival horror game built with **React**, **Vite**, **Tailw
 - **Auxiliary Power Generator (Night 3+)**: Unlocked starting from Night 3! Located to the left of the OMR Desk Monitor. Solve the wire-matching puzzle to arm it — extra power (**+10% to +15%**) automatically kicks in the instant facility power reaches 0% to prevent blackout!
 - **PWA & Add to Home Screen Support**: Full Progressive Web App (PWA) with `manifest.json`, Service Worker, offline asset caching, and one-click **"INSTALL APP" / "ADD TO HOME SCREEN"** for Android, iOS Safari, and Desktop.
 - **Security Doors & Hallway Light**: Toggle blast door lockdown (`[D]`) and hallway light (`[L]`).
-- **Security Mask Overlay**: Put on your mask (`[M]`) to disguise yourself from Johann when he lurks in the door window.
+- **Security Mask Overlay**: Put on your mask (`[M]` or click the mask on the desk near the monitor) to disguise yourself from Johann when he lurks in the door window.
 - **Scare Audio Lure with Subtitles**: Broadcast teacher voice lines (`[A]`) with a 10-second countdown to scare Abhishek away to another room, showing speech subtitles (`"Where is your photocopy?"`, `"Change your attitude children!"`, `"Submit your dpp!"`).
 - **CCTV Surveillance System**: Interactive 6-camera surveillance map (`[SPACE]`):
   - **CAM 1 - Room A**: Physics Lab (starting den for AB)

@@ -13,6 +13,8 @@ class SoundManager {
     this.heartbeatTimer = null;
     this.menuBgm = null;
     this.uploadSuccessAudio = null;
+    this.footstepsAudio = null;
+    this.footstepsTimer = null;
     this.scareAudios = [];
     this.currentScareAudio = null;
     this.initAudioAssets();
@@ -51,6 +53,9 @@ class SoundManager {
       this.uploadSuccessAudio = new Audio('./assets/audio/upload-success.mp3');
       this.uploadSuccessAudio.preload = 'auto';
 
+      this.footstepsAudio = new Audio('./assets/audio/footsteps.mp3');
+      this.footstepsAudio.preload = 'auto';
+
       this.scareMetadata = [
         { src: './assets/audio/change-your-attitude-children.mp3', subtitle: 'Change your attitude children!' },
         { src: './assets/audio/submit-your-dpp.mp3', subtitle: 'Submit your dpp!' },
@@ -81,6 +86,7 @@ class SoundManager {
     if (this.sprintAudio) this.sprintAudio.muted = this.isMuted;
     if (this.menuBgm) this.menuBgm.muted = this.isMuted;
     if (this.uploadSuccessAudio) this.uploadSuccessAudio.muted = this.isMuted;
+    if (this.footstepsAudio) this.footstepsAudio.muted = this.isMuted;
     if (this.scareAudios) {
       this.scareAudios.forEach(a => { a.muted = this.isMuted; });
     }
@@ -234,6 +240,7 @@ class SoundManager {
 
   // --- PAUSE & RESUME GAME AUDIO ---
   pauseGameAudio() {
+    this.stopFootstepClip();
     if (this.fanGain && this.ctx) {
       this.fanGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
     }
@@ -468,6 +475,63 @@ class SoundManager {
     gain.connect(this.masterGain);
     osc.start(now);
     osc.stop(now + 0.3);
+  }
+
+
+  // --- FOOTSTEPS RANDOM PORTION (2-4s) ON ENEMY MOVEMENT ---
+  playFootstepClip(minDuration = 2, maxDuration = 4) {
+    this.initContext();
+    if (this.isMuted) return;
+
+    if (!this.footstepsAudio) {
+      this.footstepsAudio = new Audio('./assets/audio/footsteps.mp3');
+      this.footstepsAudio.preload = 'auto';
+    }
+
+    try {
+      const audio = this.footstepsAudio;
+      if (this.footstepsTimer) {
+        clearTimeout(this.footstepsTimer);
+        this.footstepsTimer = null;
+      }
+      audio.pause();
+
+      const totalDuration = (audio.duration && !isNaN(audio.duration) && audio.duration > 0) ? audio.duration : 9.4;
+      const playDuration = Math.random() * (maxDuration - minDuration) + minDuration; // 2 to 4 seconds
+      const maxStart = Math.max(0, totalDuration - playDuration);
+      const startOffset = Math.random() * maxStart;
+
+      audio.currentTime = startOffset;
+      audio.volume = this.isMuted ? 0 : 0.85;
+
+      const playPromise = audio.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          this.footstepsTimer = setTimeout(() => {
+            try {
+              audio.pause();
+            } catch (_) {}
+            this.footstepsTimer = null;
+          }, playDuration * 1000);
+        }).catch((e) => {
+          console.warn('Footstep clip play error:', e);
+        });
+      }
+    } catch (e) {
+      console.warn('Footstep clip error:', e);
+    }
+  }
+
+  stopFootstepClip() {
+    if (this.footstepsTimer) {
+      clearTimeout(this.footstepsTimer);
+      this.footstepsTimer = null;
+    }
+    if (this.footstepsAudio) {
+      try {
+        this.footstepsAudio.pause();
+      } catch (_) {}
+    }
   }
 
   // --- FOOTSTEP / ANIMATRONIC MOVEMENT ---
@@ -717,6 +781,7 @@ class SoundManager {
 
   // --- JUMPSCARE SFX PLAYBACK ---
   playJumpscare() {
+    this.stopFootstepClip();
     this.stopFan();
     this.stopHeartbeat();
     this.stopBlackoutMusic();

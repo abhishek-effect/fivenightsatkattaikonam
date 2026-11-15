@@ -76,7 +76,7 @@ export default function RulesModal({ onClose }) {
                     <span>SECURITY MASK [M]</span>
                   </div>
                   <p className="text-gray-400">
-                    Equips wearable mask disguise. Fools Johann when he peers through the door window!
+                    Equips wearable mask disguise. Click the mask on the desk or press [M]. Fools Johann when he peers through the door window!
                   </p>
                 </div>
 

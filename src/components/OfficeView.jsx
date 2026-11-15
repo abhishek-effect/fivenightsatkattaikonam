@@ -407,8 +407,63 @@ export default function OfficeView({
           <DeskMonitor
             gameState={gameState}
             onOpenModal={() => setIsOmrModalOpen(true)}
+            isDisplayFlashing={isDisplayFlashing}
             className="w-full h-full"
           />
+        </div>
+
+        {/* Wearable Security Mask on Desk (Near Monitor, Right Side - No clash with wires puzzle on left) */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!gameState.isBlackout && !gameState.isOmrUploading) {
+              onToggleMask();
+            }
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            if (!gameState.isBlackout && !gameState.isOmrUploading) {
+              onToggleMask();
+            }
+          }}
+          className={`absolute bottom-[44%] sm:bottom-[45%] md:bottom-[45.5%] left-[13.8%] sm:left-[14.5%] md:left-[15%] pointer-events-auto cursor-pointer transition-all duration-150 group active:scale-95 flex flex-col items-center ${
+            gameState.isBlackout ? 'z-36' : 'z-20'
+          } ${
+            gameState.isMaskOn ? 'opacity-45 scale-95' : 'opacity-95 hover:opacity-100 hover:scale-105'
+          }`}
+          title={
+            gameState.isMaskOn
+              ? 'Security Mask (Equipped - Click to Remove) [M]'
+              : 'Security Mask (Click to Wear) [M]'
+          }
+        >
+          {/* Mask Image cutout on counter surface */}
+          <div className="relative w-14 h-13 sm:w-17 sm:h-16 md:w-21 md:h-19 lg:w-25 lg:h-23 filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+            <img
+              src="./assets/images/mask.webp"
+              alt="Security Mask on Desk"
+              className={`w-full h-full object-contain pointer-events-none transition duration-200 ${
+                gameState.isMaskOn
+                  ? 'filter grayscale contrast-75 brightness-75'
+                  : 'group-hover:brightness-115 group-hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]'
+              }`}
+              loading="eager"
+            />
+            {!gameState.isMaskOn && (
+              <div className="absolute inset-0 rounded-full bg-yellow-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none animate-pulse" />
+            )}
+          </div>
+
+          {/* Mask Status Tag on Counter */}
+          <div
+            className={`mt-0.5 px-1.5 py-0.5 rounded text-[6.5px] sm:text-[7.5px] font-mono font-bold tracking-wider border shadow-md transition ${
+              gameState.isMaskOn
+                ? 'bg-neutral-900/90 border-neutral-700 text-neutral-400'
+                : 'bg-black/85 border-yellow-500/70 text-yellow-300 group-hover:bg-yellow-950 group-hover:border-yellow-400'
+            }`}
+          >
+            {gameState.isMaskOn ? 'MASK: WORN [M]' : 'MASK: WEAR [M]'}
+          </div>
         </div>
 
         {/* Classic Spinning Security Desk Fan */}
@@ -459,26 +514,6 @@ export default function OfficeView({
             </button>
             <span className={`text-[8px] sm:text-[9px] font-bold font-mono tracking-wider ${isLightActive ? 'text-yellow-400' : 'text-gray-500'}`}>
               {isLightActive ? '● ON' : '○ OFF'}
-            </span>
-          </div>
-
-          {/* 3. SECURITY MASK BUTTON (DEFENSE AGAINST JOHANN) */}
-          <div className="flex flex-col items-center gap-0.5">
-            <button
-              onClick={onToggleMask}
-              disabled={gameState.isBlackout}
-              className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-3 sm:border-4 flex flex-col items-center justify-center font-bold text-xs transition active:scale-90 shadow-xl cursor-pointer ${
-                gameState.isMaskOn
-                  ? 'bg-yellow-500 border-yellow-300 text-black shadow-[0_0_25px_rgba(234,179,8,0.9)] animate-pulse'
-                  : 'bg-neutral-800 border-neutral-600 text-gray-400 hover:bg-neutral-700 hover:text-white'
-              }`}
-              title="Toggle Mask Helmet [M]"
-            >
-              <span className="text-sm sm:text-base">🎭</span>
-              <span className="text-[8px] sm:text-[9.5px] mt-0.5 tracking-wider font-mono">MASK</span>
-            </button>
-            <span className={`text-[8px] sm:text-[9px] font-bold font-mono tracking-wider ${gameState.isMaskOn ? 'text-yellow-400' : 'text-gray-500'}`}>
-              {gameState.isMaskOn ? '● EQUIPPED' : '○ OFF'}
             </span>
           </div>
 

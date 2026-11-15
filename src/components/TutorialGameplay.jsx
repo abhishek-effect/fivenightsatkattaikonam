@@ -396,7 +396,7 @@ export default function TutorialGameplay({ onFinish, onStartNight1 }) {
       title: 'STEP 7: JOHANN DOOR ATTACK & MASK [M]',
       guide: 'LOOK AT THE DOOR! Johann is staring through the glass window! After 2s he bangs, after 5s he attacks! Equip your MASK [M] immediately to fool him!',
       objective: 'Press [M] to put on your security mask overlay',
-      actionHint: 'Press [M] or tap MASK button on the wall',
+      actionHint: 'Press [M] or click the Mask on the desk near the monitor',
       check: stepActions.maskDefendedJohann,
       canNext: stepActions.maskDefendedJohann,
     },

@@ -5,6 +5,7 @@ export default function DeskMonitor({
   gameState,
   onOpenModal,
   className = '',
+  isDisplayFlashing = false,
 }) {
   const [showCooldownTooltip, setShowCooldownTooltip] = useState(false);
 
@@ -55,6 +56,13 @@ export default function DeskMonitor({
       >
         {!isBlackout && (
           <>
+            {/* Quick screen static flash when an enemy moves (no slow fade) */}
+            {isDisplayFlashing && (
+              <div className="absolute inset-0 z-30 pointer-events-none bg-black flex items-center justify-center">
+                <div className="absolute inset-0 static-fuzz opacity-85 pointer-events-none" />
+                <div className="absolute top-[35%] inset-x-0 h-1.5 bg-white/50 mix-blend-screen pointer-events-none" />
+              </div>
+            )}
             {/* Screen Scanlines and Cathode Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-950/30 via-transparent to-black/60 pointer-events-none z-10" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.35)_50%)] bg-[length:100%_4px] pointer-events-none z-10 opacity-70" />
