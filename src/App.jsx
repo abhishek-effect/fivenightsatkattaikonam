@@ -122,14 +122,12 @@ export default function App() {
 
   // Retry same night
   const handleRetry = () => {
-    requestAppFullscreen();
     setIsPaused(false);
     handleStartGame(currentNight, customConfigRef.current);
   };
 
   // Proceed to next night
   const handleNextNight = () => {
-    requestAppFullscreen();
     setIsPaused(false);
     const next = Math.min(5, currentNight + 1);
     setCurrentNight(next);
@@ -158,7 +156,6 @@ export default function App() {
       if (next) {
         soundManager.pauseGameAudio();
       } else {
-        requestAppFullscreen();
         soundManager.resumeGameAudio();
       }
       return next;

@@ -23,6 +23,7 @@ export default function OfficeView({
   onActivateGenerator,
   showMinutes = false,
   onToggleClockFormat,
+  isDisplayFlashing = false,
 }) {
   const [isOmrModalOpen, setIsOmrModalOpen] = useState(false);
   const [isWirePuzzleOpen, setIsWirePuzzleOpen] = useState(false);

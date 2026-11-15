@@ -3,7 +3,7 @@ import { Clock, Download, Volume2, VolumeX, Sparkles, Play, Settings, HelpCircle
 import { soundManager } from '../audio/SoundManager';
 import { NIGHT_PRESETS } from '../game/gameEngine';
 import RulesModal from './RulesModal';
-import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
+import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
 export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1, onSelectNight, onResetProgress, onStartTutorial, showMinutes = false, onToggleClockFormat }) {
   const [isMuted, setIsMuted] = useState(soundManager.isMuted);
@@ -119,7 +119,6 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
 
   const handleCustomStart = () => {
     if (unlockedNight < 6) return;
-    requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(6, {
       abLevel: customAI.ab,
@@ -149,7 +148,6 @@ export default function MainMenu({ onStartGame, currentNight, unlockedNight = 1,
 
   const handleStartShift = (night) => {
     if (night > unlockedNight && night <= 5) return;
-    requestAppFullscreen();
     soundManager.stopMenuBgm();
     onStartGame(night);
   };

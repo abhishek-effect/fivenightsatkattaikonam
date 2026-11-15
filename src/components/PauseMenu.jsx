@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Home, RotateCcw, Pause, ShieldAlert, Zap, Maximize, Minimize } from 'lucide-react';
 import { soundManager } from '../audio/SoundManager';
-import { requestAppFullscreen, isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
+import { isAppFullscreen, toggleAppFullscreen } from '../utils/fullscreen';
 
 export default function PauseMenu({ gameState, onResume, onMainMenu, onRestart }) {
   const [isFullscreen, setIsFullscreen] = useState(isAppFullscreen());
@@ -23,7 +23,6 @@ export default function PauseMenu({ gameState, onResume, onMainMenu, onRestart }
     const handleKeyDown = (e) => {
       if (e.code === 'Escape' || e.code === 'KeyP') {
         e.preventDefault();
-        requestAppFullscreen();
         onResume();
       }
     };
@@ -64,7 +63,6 @@ export default function PauseMenu({ gameState, onResume, onMainMenu, onRestart }
           {/* RESUME BUTTON */}
           <button
             onClick={() => {
-              requestAppFullscreen();
               onResume();
             }}
             className="w-full py-3 sm:py-3.5 px-4 sm:px-6 bg-emerald-950 hover:bg-emerald-900 border-2 border-emerald-500 hover:border-emerald-400 text-emerald-200 font-mono font-bold tracking-widest text-xs sm:text-sm rounded-lg transition-all duration-150 flex items-center justify-center gap-2 sm:gap-3 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-[1.02] active:scale-98 cursor-pointer"

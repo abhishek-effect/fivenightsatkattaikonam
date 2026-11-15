@@ -31,6 +31,17 @@ export function isAppFullscreen() {
 }
 
 export function requestAppFullscreen() {
+  if (isAppFullscreen()) return;
+
+  // If the browser supports userActivation API, verify that a user gesture is currently active.
+  // Calling requestFullscreen without an active user gesture produces:
+  // "Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture."
+  if (typeof navigator !== 'undefined' && 'userActivation' in navigator) {
+    if (!navigator.userActivation?.isActive) {
+      return;
+    }
+  }
+
   try {
     const el = document.documentElement || document.body || document.getElementById('root');
     if (!el) return;
@@ -41,9 +52,15 @@ export function requestAppFullscreen() {
     if (el.requestFullscreen) {
       const p = el.requestFullscreen(options);
       if (p && typeof p.catch === 'function') {
-        p.catch(() => {
-          // Retry without navigationUI if the browser doesn't accept the options parameter
-          el.requestFullscreen().catch(() => {});
+        p.catch((err) => {
+          // If options parameter was rejected by browser, retry without options only if still active
+          if (err && err.name !== 'NotAllowedError' && err.name !== 'TypeError') {
+            if (!navigator?.userActivation || navigator.userActivation?.isActive) {
+              try {
+                el.requestFullscreen().catch(() => {});
+              } catch (_) {}
+            }
+          }
         });
       }
     } else if (el.webkitRequestFullscreen) {
@@ -56,7 +73,7 @@ export function requestAppFullscreen() {
       el.msRequestFullscreen();
     }
   } catch (err) {
-    console.warn('Fullscreen request blocked or not supported on this device:', err);
+    // Suppress unhandled exceptions
   }
 
   // Mobile address bar collapse trigger
