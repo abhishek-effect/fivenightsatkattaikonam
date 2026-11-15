@@ -1,5 +1,5 @@
 // FNAK Service Worker for PWA Add-to-Home-Screen Support
-const CACHE_NAME = 'fnak-cache-v1.2';
+const CACHE_NAME = 'fnak-cache-v1.3';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
