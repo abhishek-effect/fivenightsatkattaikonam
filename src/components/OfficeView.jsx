@@ -291,108 +291,6 @@ export default function OfficeView({
         )}
 
 
-        {/* Auxiliary Power Generator: Usable only from Night 3 onwards! */}
-        {Boolean(gameState.isGeneratorAvailable) && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!gameState.isGeneratorUsed) {
-                setIsWirePuzzleOpen(true);
-              }
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              if (!gameState.isGeneratorUsed) {
-                setIsWirePuzzleOpen(true);
-              }
-            }}
-            className={`absolute bottom-[45%] sm:bottom-[46%] md:bottom-[46.5%] left-[3.5%] sm:left-[4%] md:left-[4.5%] pointer-events-auto w-20 h-26 sm:w-26 sm:h-30 md:w-30 md:h-34 lg:w-34 lg:h-38 rounded-xl border-2 transition active:scale-95 flex flex-col justify-between p-1.5 sm:p-2 cursor-pointer shadow-2xl ${
-              gameState.isBlackout ? 'z-36' : 'z-18'
-            } ${
-              gameState.isGeneratorUsed
-                ? 'bg-neutral-950/90 border-neutral-800 opacity-60 cursor-not-allowed'
-                : gameState.isGeneratorPrimed
-                ? 'bg-cyan-950/95 border-cyan-400 text-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.7)] animate-pulse'
-                : gameState.isBlackout || gameState.power < 20
-                ? 'bg-yellow-950/95 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.9)] animate-pulse'
-                : 'bg-neutral-900/90 border-neutral-700 hover:border-yellow-400 shadow-[0_0_15px_rgba(0,0,0,0.8)]'
-            }`}
-            title={
-              gameState.isGeneratorUsed
-                ? 'Generator Fuel Spent'
-                : gameState.isGeneratorPrimed
-                ? 'Generator Armed: Will activate extra power when power reaches 0%'
-                : 'Auxiliary Power Generator (Click to Rewire: activates extra power when power reaches 0%)'
-            }
-          >
-            {/* Generator Header with Hazard Stripes */}
-            <div className="h-2 rounded bg-[repeating-linear-gradient(45deg,#ca8a04,#ca8a04_6px,#171717_6px,#171717_12px)] opacity-80" />
-
-            {/* Generator Core & Dial */}
-            <div className="flex flex-col items-center justify-center my-auto space-y-1">
-              <div className="flex items-center gap-1">
-                <Zap
-                  size={16}
-                  className={
-                    gameState.isGeneratorUsed
-                      ? 'text-gray-600'
-                      : gameState.isGeneratorPrimed
-                      ? 'text-cyan-400 animate-pulse'
-                      : gameState.isBlackout || gameState.power < 20
-                      ? 'text-yellow-400 animate-spin'
-                      : 'text-yellow-500 animate-pulse'
-                  }
-                />
-                <span className="text-[8px] sm:text-[9.5px] font-black font-mono tracking-widest text-white">
-                  GEN-01
-                </span>
-              </div>
-
-              {/* Status LED */}
-              <div className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 rounded border border-neutral-800">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    gameState.isGeneratorUsed
-                      ? 'bg-red-900'
-                      : gameState.isGeneratorPrimed
-                      ? 'bg-cyan-400 animate-ping'
-                      : gameState.isBlackout || gameState.power < 20
-                      ? 'bg-yellow-400 animate-ping'
-                      : 'bg-emerald-400 animate-pulse'
-                  }`}
-                />
-                <span
-                  className={`text-[6.5px] sm:text-[7.5px] font-bold font-mono tracking-tight ${
-                    gameState.isGeneratorUsed
-                      ? 'text-neutral-500'
-                      : gameState.isGeneratorPrimed
-                      ? 'text-cyan-300 font-black'
-                      : gameState.isBlackout || gameState.power < 20
-                      ? 'text-yellow-300 font-black'
-                      : 'text-emerald-400'
-                  }`}
-                >
-                  {gameState.isGeneratorUsed
-                    ? 'DEPLETED'
-                    : gameState.isGeneratorPrimed
-                    ? 'ARMED (0%)'
-                    : gameState.isBlackout
-                    ? 'EMERGENCY!'
-                    : 'READY'}
-                </span>
-              </div>
-            </div>
-
-            {/* Sublabel */}
-            <div className="text-center font-mono text-[6.5px] sm:text-[7.5px] text-gray-400 uppercase tracking-tighter border-t border-neutral-800 pt-0.5">
-              {gameState.isGeneratorUsed
-                ? 'OFFLINE'
-                : gameState.isGeneratorPrimed
-                ? 'ARMED FOR 0%'
-                : '+10-15% AT 0%'}
-            </div>
-          </div>
-        )}
         {/* Floating Abhishek Scare Subtitle in Office */}
         {scareSubtitle && (
           <div className="absolute top-[38%] right-[11%] sm:right-[13%] z-35 pointer-events-none animate-bounce">
@@ -403,72 +301,178 @@ export default function OfficeView({
           </div>
         )}
 
-        {/* Office Security Desk Monitor */}
-        <div className="absolute bottom-[46%] sm:bottom-[47%] md:bottom-[47.5%] left-[8%] sm:left-[9%] md:left-[10%] z-18 pointer-events-auto w-32 h-28 sm:w-38 sm:h-33 md:w-46 md:h-40 lg:w-52 lg:h-45">
+        {/* Security Counter Hub: Monitor anchor with Generator strictly to the left & Mask strictly to the right */}
+        {/* Zero element collision guaranteed across all device widths & orientations */}
+        <div className="absolute bottom-[46%] sm:bottom-[47%] md:bottom-[47.5%] left-[8.5%] sm:left-[9.5%] md:left-[10.5%] z-18 w-28 h-24 sm:w-36 sm:h-31 md:w-44 md:h-38 lg:w-50 lg:h-43 pointer-events-auto">
+          {/* Security Desk Monitor (Anchor) */}
           <DeskMonitor
             gameState={gameState}
             onOpenModal={() => setIsOmrModalOpen(true)}
             isDisplayFlashing={isDisplayFlashing}
             className="w-full h-full"
           />
-        </div>
 
-        {/* Wearable Security Mask on Desk (Near Monitor, Right Side - No clash with wires puzzle on left) */}
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!gameState.isBlackout && !gameState.isOmrUploading) {
-              onToggleMask();
-            }
-          }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            if (!gameState.isBlackout && !gameState.isOmrUploading) {
-              onToggleMask();
-            }
-          }}
-          className={`absolute bottom-[44%] sm:bottom-[45%] md:bottom-[45.5%] left-[13.8%] sm:left-[14.5%] md:left-[15%] pointer-events-auto cursor-pointer transition-all duration-150 group active:scale-95 flex flex-col items-center ${
-            gameState.isBlackout ? 'z-36' : 'z-20'
-          } ${
-            gameState.isMaskOn ? 'opacity-45 scale-95' : 'opacity-95 hover:opacity-100 hover:scale-105'
-          }`}
-          title={
-            gameState.isMaskOn
-              ? 'Security Mask (Equipped - Click to Remove) [M]'
-              : 'Security Mask (Click to Wear) [M]'
-          }
-        >
-          {/* Mask Image cutout on counter surface */}
-          <div className="relative w-14 h-13 sm:w-17 sm:h-16 md:w-21 md:h-19 lg:w-25 lg:h-23 filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-            <img
-              src="./assets/images/mask.webp"
-              alt="Security Mask on Desk"
-              className={`w-full h-full object-contain pointer-events-none transition duration-200 ${
-                gameState.isMaskOn
-                  ? 'filter grayscale contrast-75 brightness-75'
-                  : 'group-hover:brightness-115 group-hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]'
+          {/* Auxiliary Power Generator: Locked strictly to the LEFT of the Monitor with guaranteed gap (Night 3+ only) */}
+          {Boolean(gameState.isGeneratorAvailable) && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!gameState.isGeneratorUsed) {
+                  setIsWirePuzzleOpen(true);
+                }
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                if (!gameState.isGeneratorUsed) {
+                  setIsWirePuzzleOpen(true);
+                }
+              }}
+              className={`absolute right-[calc(100%+8px)] sm:right-[calc(100%+12px)] md:right-[calc(100%+16px)] bottom-0 w-18 h-24 sm:w-22 sm:h-28 md:w-26 md:h-33 lg:w-30 lg:h-37 rounded-xl border-2 transition active:scale-95 flex flex-col justify-between p-1 sm:p-1.5 cursor-pointer shadow-2xl pointer-events-auto ${
+                gameState.isBlackout ? 'z-36' : 'z-18'
+              } ${
+                gameState.isGeneratorUsed
+                  ? 'bg-neutral-950/90 border-neutral-800 opacity-60 cursor-not-allowed'
+                  : gameState.isGeneratorPrimed
+                  ? 'bg-cyan-950/95 border-cyan-400 text-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.7)] animate-pulse'
+                  : gameState.isBlackout || gameState.power < 20
+                  ? 'bg-yellow-950/95 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.9)] animate-pulse'
+                  : 'bg-neutral-900/90 border-neutral-700 hover:border-yellow-400 shadow-[0_0_15px_rgba(0,0,0,0.8)]'
               }`}
-              loading="eager"
-            />
-            {!gameState.isMaskOn && (
-              <div className="absolute inset-0 rounded-full bg-yellow-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none animate-pulse" />
-            )}
-          </div>
+              title={
+                gameState.isGeneratorUsed
+                  ? 'Generator Fuel Spent'
+                  : gameState.isGeneratorPrimed
+                  ? 'Generator Armed: Will activate extra power when power reaches 0%'
+                  : 'Auxiliary Power Generator (Click to Rewire: activates extra power when power reaches 0%)'
+              }
+            >
+              {/* Generator Header with Hazard Stripes */}
+              <div className="h-1.5 sm:h-2 rounded bg-[repeating-linear-gradient(45deg,#ca8a04,#ca8a04_6px,#171717_6px,#171717_12px)] opacity-80" />
 
-          {/* Mask Status Tag on Counter */}
+              {/* Generator Core & Dial */}
+              <div className="flex flex-col items-center justify-center my-auto space-y-0.5 sm:space-y-1">
+                <div className="flex items-center gap-1">
+                  <Zap
+                    size={14}
+                    className={
+                      gameState.isGeneratorUsed
+                        ? 'text-gray-600'
+                        : gameState.isGeneratorPrimed
+                        ? 'text-cyan-400 animate-pulse'
+                        : gameState.isBlackout || gameState.power < 20
+                        ? 'text-yellow-400 animate-spin'
+                        : 'text-yellow-500 animate-pulse'
+                    }
+                  />
+                  <span className="text-[7.5px] sm:text-[9px] font-black font-mono tracking-widest text-white">
+                    GEN-01
+                  </span>
+                </div>
+
+                {/* Status LED */}
+                <div className="flex items-center gap-1 bg-black/60 px-1 py-0.5 rounded border border-neutral-800">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      gameState.isGeneratorUsed
+                        ? 'bg-red-900'
+                        : gameState.isGeneratorPrimed
+                        ? 'bg-cyan-400 animate-ping'
+                        : gameState.isBlackout || gameState.power < 20
+                        ? 'bg-yellow-400 animate-ping'
+                        : 'bg-emerald-400 animate-pulse'
+                    }`}
+                  />
+                  <span
+                    className={`text-[6px] sm:text-[7px] font-bold font-mono tracking-tight ${
+                      gameState.isGeneratorUsed
+                        ? 'text-neutral-500'
+                        : gameState.isGeneratorPrimed
+                        ? 'text-cyan-300 font-black'
+                        : gameState.isBlackout || gameState.power < 20
+                        ? 'text-yellow-300 font-black'
+                        : 'text-emerald-400'
+                    }`}
+                  >
+                    {gameState.isGeneratorUsed
+                      ? 'DEPLETED'
+                      : gameState.isGeneratorPrimed
+                      ? 'ARMED'
+                      : gameState.isBlackout
+                      ? 'EMERGENCY'
+                      : 'READY'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Sublabel */}
+              <div className="text-center font-mono text-[6px] sm:text-[7px] text-gray-400 uppercase tracking-tighter border-t border-neutral-800 pt-0.5 whitespace-nowrap">
+                {gameState.isGeneratorUsed
+                  ? 'OFFLINE'
+                  : gameState.isGeneratorPrimed
+                  ? 'ARMED'
+                  : '+10-15%'}
+              </div>
+            </div>
+          )}
+
+          {/* Wearable Security Mask: Locked strictly to the RIGHT of the Monitor with guaranteed gap */}
+          {/* Cannot collide with monitor or generator on any screen size */}
           <div
-            className={`mt-0.5 px-1.5 py-0.5 rounded text-[6.5px] sm:text-[7.5px] font-mono font-bold tracking-wider border shadow-md transition ${
-              gameState.isMaskOn
-                ? 'bg-neutral-900/90 border-neutral-700 text-neutral-400'
-                : 'bg-black/85 border-yellow-500/70 text-yellow-300 group-hover:bg-yellow-950 group-hover:border-yellow-400'
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!gameState.isBlackout && !gameState.isOmrUploading) {
+                onToggleMask();
+              }
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              if (!gameState.isBlackout && !gameState.isOmrUploading) {
+                onToggleMask();
+              }
+            }}
+            className={`absolute left-[calc(100%+10px)] sm:left-[calc(100%+14px)] md:left-[calc(100%+18px)] bottom-0 cursor-pointer transition-all duration-150 group active:scale-95 flex flex-col items-center pointer-events-auto ${
+              gameState.isBlackout ? 'z-36' : 'z-20'
+            } ${
+              gameState.isMaskOn ? 'opacity-45 scale-95' : 'opacity-95 hover:opacity-100 hover:scale-105'
             }`}
+            title={
+              gameState.isMaskOn
+                ? 'Security Mask (Equipped - Click to Remove) [M]'
+                : 'Security Mask (Click to Wear) [M]'
+            }
           >
-            {gameState.isMaskOn ? 'MASK: WORN [M]' : 'MASK: WEAR [M]'}
+            {/* Mask Image cutout on counter surface */}
+            <div className="relative w-12 h-11 sm:w-15 sm:h-14 md:w-18 md:h-16 lg:w-21 lg:h-19 filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+              <img
+                src="./assets/images/mask.webp"
+                alt="Security Mask on Desk"
+                className={`w-full h-full object-contain pointer-events-none transition duration-200 ${
+                  gameState.isMaskOn
+                    ? 'filter grayscale contrast-75 brightness-75'
+                    : 'group-hover:brightness-115 group-hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]'
+                }`}
+                loading="eager"
+              />
+              {!gameState.isMaskOn && (
+                <div className="absolute inset-0 rounded-full bg-yellow-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none animate-pulse" />
+              )}
+            </div>
+
+            {/* Mask Status Tag on Counter */}
+            <div
+              className={`mt-0.5 px-1 sm:px-1.5 py-0.5 rounded text-[6px] sm:text-[7px] font-mono font-bold tracking-wider border shadow-md transition whitespace-nowrap ${
+                gameState.isMaskOn
+                  ? 'bg-neutral-900/90 border-neutral-700 text-neutral-400'
+                  : 'bg-black/85 border-yellow-500/70 text-yellow-300 group-hover:bg-yellow-950 group-hover:border-yellow-400'
+              }`}
+            >
+              {gameState.isMaskOn ? 'MASK: WORN' : 'MASK: WEAR'}
+            </div>
           </div>
         </div>
 
-        {/* Classic Spinning Security Desk Fan */}
-        <div className="absolute bottom-6 sm:bottom-8 left-[16%] sm:left-[17%] z-15 pointer-events-none w-32 h-40 sm:w-40 sm:h-48 md:w-48 md:h-56">
+        {/* Classic Spinning Security Desk Fan (Positioned in foreground desk, clear of counter equipment) */}
+        <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-[23%] sm:left-[24%] md:left-[25%] z-15 pointer-events-none w-28 h-36 sm:w-36 sm:h-44 md:w-44 md:h-52">
           <DeskFan isBlackout={gameState.isBlackout} className="w-full h-full" />
         </div>
 
