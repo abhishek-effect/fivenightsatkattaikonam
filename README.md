@@ -4,6 +4,12 @@ A FNAF-inspired web survival horror game built with **React**, **Vite**, **Tailw
 
 ---
 
+#Disclaimer
+
+This is an independent parody project created purely for entertainment. Photographs and likenesses of individuals are used for humorous purposes only, with no intention to offend, harass, defame, or cause harm. All references to real-world institutions, brands, products, and games are fictional and do not imply any affiliation, endorsement, or sponsorship. All references such as "Free GTA 6.exe" and "IIT" are jokes and not genuine products or offers.
+
+---
+
 ## 🎮 Gameplay Features
 - **Main Menu**: CRT scanline retro interface with Night 1-5 selection, Custom Night AI sliders (0-20 difficulty for AB, Dipu, and Aadesh), and audio toggle.
 - **Office Panoramic View**: Smooth mouse and touch panning with authentic security desk, spinning animated fan, dynamic power drain gauge, and digital clock.
